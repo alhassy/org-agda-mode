@@ -18,7 +18,7 @@ rather than the comments being surrounded by code. The idea is that software
 ought to be written like an essay to be read by a human; from this code for the
 machine can be extracted.
 
-The articles on this blog are meant to be in such a format and as such use
+The articles on this blog are meant to be in such a format and as such
 I use [[https://www.offerzen.com/blog/literate-programming-empower-your-writing-with-emacs-org-mode][Org-mode]] as my markup for producing the HTMLs and PDFs.
 
 This article aims to produce an Org-friendly approach to working
@@ -76,27 +76,36 @@ From Agda's [[https://agda.readthedocs.io/en/v2.5.4.1/language/lexical-structure
 
 #+BEGIN_SRC emacs-lisp :tangle org-agda-mode.el
 (setq org-agda-keywords '("=" "|" "->" "→" ":" "?" "\\" "λ" "∀" ".." "..." "abstract" "codata"
-			  "coinductive" "constructor" "data" "do" "eta-equality" "field"
-			  "forall" "hiding" "import" "in" "inductive" "infix" "infixl"
-			  "infixr" "instance" "let" "macro" "module" "mutual" "no-eta-equality"
-			  "open" "overlap" "pattern" "postulate" "primitive" "private" "public"
-			  "quote" "quoteContext" "quoteGoal" "quoteTerm" "record" "renaming"
-			  "rewrite" "Set" "syntax" "tactic" "unquote" "unquoteDecl" "unquoteDef"
-			  "using" "where" "with"))
+                          "coinductive" "constructor" "data" "do" "eta-equality" "field"
+                          "forall" "hiding" "import" "in" "inductive" "infix" "infixl"
+                          "infixr" "instance" "let" "macro" "module" "mutual" "no-eta-equality"
+                          "open" "overlap" "pattern" "postulate" "primitive" "private" "public"
+                          "quote" "quoteContext" "quoteGoal" "quoteTerm" "record" "renaming"
+                          "rewrite" "Set" "syntax" "tactic" "unquote" "unquoteDecl" "unquoteDef"
+                          "using" "where" "with"))
 #+END_SRC
 
 ** The ~generic-mode~ Definition
+
+Agda colouring is approximated as defined below, but a convention is made:
+Function symbols begin with a lower case letter, whereas type symbols begin
+with a capital letter. Otherwise, I would need to resort to Agda's mechanism
+for determining whether a name is a type or not:
+#+BEGIN_CENTER
+/Parsing is Typechecking!/
+#+END_CENTER
 
 #+BEGIN_SRC emacs-lisp :tangle org-agda-mode.el
 (define-generic-mode
     'org-agda-mode                      ;; name of the mode
     (list '("{-" . "-}"))               ;; comments delimiter
     org-agda-keywords    
-    ;; font lock list: Order of colouring matters, the numbers refer to which subpart or the whole(0) that should be coloured.
+    ;; font lock list: Order of colouring matters; 
+    ;; the numbers refer to the subpart, or the whole(0), that should be coloured.
     (list
      ;; To begin with, after "module" or after "import" should be purple
-     ;; '("\\(module \\)\\([a-zA-Z0-9\-_]\\)" 0   '((t (:foreground "purple"))))
-     '("\\(module\\|import\\) \\([a-zA-Z0-9\-_\.]+\\)" 2 '((t (:foreground "purple")))) ;; note the SPC
+     ;; Note the SPACE below.
+     '("\\(module\\|import\\) \\([a-zA-Z0-9\-_\.]+\\)" 2 '((t (:foreground "purple")))) 
      
      ;; Agda special symbols: as
      '(" as" 0 'agda2-highlight-symbol-face)
@@ -113,7 +122,7 @@ From Agda's [[https://agda.readthedocs.io/en/v2.5.4.1/language/lexical-structure
      '("\\([0-9]+\\)" 1   '((t (:foreground "purple")))) ;; 'font-lock-constant-face)
      
      ;; other faces to consider:
-     ;; 'font-lock-keyword-face 'font-lock-builtin-face 'font-lock-function-name-face)
+     ;; 'font-lock-keyword-face 'font-lock-builtin-face 'font-lock-function-name-face
      ;;' font-lock-variable-name-face
      )
     
@@ -128,9 +137,13 @@ From Agda's [[https://agda.readthedocs.io/en/v2.5.4.1/language/lexical-structure
 ; (describe-symbol 'font-lock-function-name-face)
 #+END_SRC
 
+I do not insist that ~org-agda-mode~ be activated on any particular files by default.
+
 * (~lagda-to-org)~ and (~org-to-lagda)~
 
-Rather than using a multiple mode setting, I will merely
+Agda would not typecheck a non-~lagda~, or non-~agda~, file therefore
+I cannot use Org-mode multiple mode settings.
+I will instead merely
 swap the syntax of the modes then reload the desired mode.
 --It may not be ideal, but it does what I want in a fast enough fashion.
 
@@ -174,6 +187,10 @@ literate Agda, as well as their closing partners.
 )
 #+END_SRC
 
+# Note that remebering-position in `rewrite-ends` does not work as expected
+# since I would go to the position, then change to a different mode, say org-mode,
+# which then folds all sections thereby obscuring the position we were at.
+
 The two rewriting utilities:
 
 #+BEGIN_SRC emacs-lisp
@@ -210,13 +227,16 @@ The two rewriting utilities:
 Handy-dandy shortcuts:
 
 #+BEGIN_SRC emacs-lisp
-;; These are local to the buffer that loads this file.
-
 (local-set-key (kbd "C-x C-a") 'org-to-lagda)
 (local-set-key (kbd "C-x C-o") 'lagda-to-org)
+
+;; Maybe consider a simple “toggle” instead?
 #+END_SRC
 
-*TODO* Accommodate for Agda ~spec~ environments via ~#+BEGIN_EXAMPLE~.
+# *TODO* Method to turn an begin{spec} into a begin{code}
+# Maybe this exists for Org-blocks: SRC ↔ EXAMPLE?
+# Maybe this exists for agda2-mode?
+
 * Example
 
 # Useful for debugging.
@@ -258,7 +278,7 @@ hole = {!!}
 
 #+END_SRC
 
-Here's a literate Agda ~spec~-ification environment, which corresponds to an Org-mode ~Example~ block.
+Here's a literate Agda ~spec~-ification environment, which corresponds to an Org-mode ~EXAMPLE~ block.
 #+BEGIN_EXAMPLE org-agda
 module this-is-a-spec {A : Set} (_≤_ : A → A → Set) where
 
@@ -266,11 +286,19 @@ module this-is-a-spec {A : Set} (_≤_ : A → A → Set) where
   maximum-specfication c = ?
 #+END_EXAMPLE
 
-* COMMENT Summary of Utilities Provided
+* Summary 
+# of Utilities Provided
+
+We now have the utility functions:
 
 | _Command_ | _Action_                                                      |
 | ~C-x C-a~ | transform org ~org-agda~ blocks to literate Agda blocs        |
 | ~C-x C-o~ | transform literate Agda code delimiters to org ~org-agda~ src |
+
+This was fun: I learned a lot of elisp!
+Hopefully I can make use of this, in the small, if not in the large
+--in which case I'll need to return to the many ~COMMENT~-ed out sections
+in this document.
 
 # -- E.g., this begin{code} won't be rewritten;
 # -- neither will the in-line #+END_SRC. Nice!
@@ -294,6 +322,7 @@ module this-is-a-spec {A : Set} (_≤_ : A → A → Set) where
 1. Be capitalisation independent? E.g., SRC ≈ src?
 2. Discussion on other options: outline-mode or outshine or multimod.e
 3. Improved integration with [[https://alhassy.github.io/AlBasmala/][AlBasmala]] for better resulting PDFs.
+4. Switch between EXAMPLE & SRC; ie begin vs spec.
 
 * COMMENT Construction Sites to Eventually Return to :backlog:
 ** DONE [OLD] ~lagda-to-org~ and ~org-to-lagda~                :works:abandoned:
@@ -534,6 +563,26 @@ of a file, or alternatively we execute the following /once/.
 
 #+END_SRC
 
+* README :ignore:
+
+#+HTML: <!--
+#+BEGIN_SRC emacs-lisp :tangle README.org
+# This file is generated from literate.lagda.
+
+# Title, author, etc are #+INCLUDE'd from literate.org.
+
+,#+HTML: <h1> org-agda-mode </h1>
+
+An Emacs mode for working with Agda code in an Org-mode like fashion, more or less.
+
+,#+TOC: headlines 2
+,#+INCLUDE: literate.lagda
+#+END_SRC
+#+HTML: -->
+
+# In temporary buffer: open "README.org", then
+# (org-md-export-to-markdown)
+
 * COMMENT footer
 
 Note the existence of: (agda2-restart)
@@ -547,5 +596,6 @@ orgstruct-mode
 # eval: (org-mode)
 # eval: (org-babel-tangle)
 # eval: (org-babel-load-file "literate.lagda")
-# compile-command: (progn (org-babel-tangle) (my-org-html-export-to-html))
+# eval: (defun MkReadme () (org-md-export-to-markdown) (shell-command "mv literate.md README.md"))
+# compile-command: (progn (org-babel-tangle) (my-org-html-export-to-html) )
 # End:
