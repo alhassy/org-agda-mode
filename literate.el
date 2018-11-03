@@ -62,7 +62,7 @@
   )
 )
 
-;; These are local to the buffer that loads this file.
-
 (local-set-key (kbd "C-x C-a") 'org-to-lagda)
 (local-set-key (kbd "C-x C-o") 'lagda-to-org)
+
+;; Maybe consider a simple “toggle” instead?

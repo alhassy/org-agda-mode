@@ -2,12 +2,17 @@
 #+DESCRIPTION: An Org-mode utility for Agda.
 #+AUTHOR: Musa Al-hassy
 #+EMAIL: alhassy@gmail.com
-#+IMAGE: ../assets/img/org-logo.jpg
-#+CATEGORIES: Agda Org Elisp
-#+OPTIONS: toc:nil html-postamble:nil
+#+DESCRIPTION: An Emacs mode for working with Agda code in an Org-mode like fashion, more or less.
 #+STARTUP: indent
- 
-#+LaTeX_HEADER:   \usepackage{agda}
+#+CATEGORIES: Agda Org Emacs
+#+OPTIONS: html-postamble:nil toc:nil
+#+IMAGE: ../assets/img/org_logo.png
+#+SOURCE: https://raw.githubusercontent.com/alhassy/org-agda-mode/master/literate.lagda
+
+# (shell-command "export PATH=\"~/.cabal/bin/$PATH\"")
+
+# LaTeX_HEADER:   \usepackage{agda}
+#+INCLUDE: ~/Dropbox/MyUnicodeSymbols.org
 
 * Abstract       :ignore:
 #+BEGIN_CENTER 
@@ -249,7 +254,7 @@ Handy-dandy shortcuts:
 #+HTML: -->
 
 Here's some sample fragments, whose editing can be turned on with ~C-x C-a~.
-#+BEGIN_SRC org-agda
+\begin{code}
 mmodule literate where
 
 data ℕ : Set where
@@ -264,27 +269,27 @@ double (Succ n) = Succ (Succ (double n))
       multiline
         comment -}
 
-{- No one line comments … Yet -}
+{- No one line comment colouring … Yet -}
 
 open import Data.Nat as Lib
 
-camlCaseIdentifier-01 : Lib.ℕ
-camlCaseIdentifier-01 = let it = 1234 in it
+camelCaseIdentifier-01 : Lib.ℕ
+camelCaseIdentifier-01 = let it = 1234 in it
 
 postulate magic : Set
 
 hole : magic
 hole = {!!}
 
-#+END_SRC
+\end{code}
 
 Here's a literate Agda ~spec~-ification environment, which corresponds to an Org-mode ~EXAMPLE~ block.
-#+BEGIN_EXAMPLE org-agda
+\begin{spec}
 module this-is-a-spec {A : Set} (_≤_ : A → A → Set) where
 
   maximum-specfication : (candidate : A) → Set
   maximum-specfication c = ?
-#+END_EXAMPLE
+\end{spec}
 
 * Summary 
 # of Utilities Provided
@@ -563,39 +568,48 @@ of a file, or alternatively we execute the following /once/.
 
 #+END_SRC
 
-* README :ignore:
+* COMMENT README
 
-#+HTML: <!--
-#+BEGIN_SRC emacs-lisp :tangle README.org
-# This file is generated from literate.lagda.
+C-c C-c: evalute src block
 
-# Title, author, etc are #+INCLUDE'd from literate.org.
+#+NAME: make-readme
+#+BEGIN_SRC emacs-lisp :results none
+(with-temp-buffer
+    (insert 
+    "#+EXPORT_FILE_NAME: README.md
+     #+HTML: <h1> org-agda-mode </h1>
 
-,#+HTML: <h1> org-agda-mode </h1>
+     An Emacs mode for working with 
+     Agda code in an Org-mode like fashion, more or less.
 
-An Emacs mode for working with Agda code in an Org-mode like fashion, more or less.
+     The following can also be read as a [[https://alhassy.github.io/literate/][blog post]].
 
-,#+TOC: headlines 2
-,#+INCLUDE: literate.lagda
+     #+TOC: headlines 2
+     #+INCLUDE: literate.lagda
+    ")
+    ;; (set-visited-file-name "ReadIt2.md")
+    (org-mode)
+    (org-md-export-to-markdown)
+)
 #+END_SRC
-#+HTML: -->
-
-# In temporary buffer: open "README.org", then
-# (org-md-export-to-markdown)
 
 * COMMENT footer
 
 Note the existence of: (agda2-restart)
-
 org-shifttab
 orgstruct-mode
-(when nil (load-file "~/alhassy.github.io/content/AlBasmala.el"))
+
+NOTE that AlBasmala calls the source file NAME.org, so below we change that to
+this file's name.
 
 # Local Variables:
 # eval: (visual-line-mode t)
+# eval: (when nil (load-file "~/alhassy.github.io/content/AlBasmala.el"))
+# eval: (setq NAMEorg (buffer-name))
+# eval: (setq pdfsLocation "~/alhassy.github.io/assets/pdfs/")
 # eval: (org-mode)
 # eval: (org-babel-tangle)
 # eval: (org-babel-load-file "literate.lagda")
-# eval: (defun MkReadme () (org-md-export-to-markdown) (shell-command "mv literate.md README.md"))
-# compile-command: (progn (org-babel-tangle) (my-org-html-export-to-html) )
+# eval: (progn (org-babel-goto-named-src-block "make-readme") (org-babel-execute-src-block) (outline-hide-sublevels 1))
+# compile-command: (progn (org-babel-tangle) (my-org-html-export-to-html))
 # End:
