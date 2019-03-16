@@ -71,7 +71,7 @@
     (rewrite-ends "#+BEGIN_SRC org-agda" "#+END_SRC" "\\begin{code}" "\\end{code}")
     (rewrite-ends "#+BEGIN_EXAMPLE org-agda" "#+END_EXAMPLE" "\\begin{spec}" "\\end{spec}")
     (agda2-mode)
-    (sit-for 1) ;; necessary for the slight delay between the agda2 commands
+    (sit-for 0.1) ;; necessary for the slight delay between the agda2 commands
     (agda2-load)
     (goto-line here-line)
     (move-to-column here-column)
