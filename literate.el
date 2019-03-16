@@ -12,12 +12,11 @@
    org header, now we can unfold it whence we do so, then we go
    back to the line we want to be at.
   "
-  (interactive)
   (goto-line line)
-  (org-previous-visible-heading 1)
+  (org-back-to-heading 1)
   (org-cycle)
   (goto-line line)
-)
+  )
 
 (defun rewrite-ends (pre post new-pre new-post)
   "Perform the following in-buffer rewrite: ⟨pre⟩⋯⟨post⟩ ↦ ⟨newPre⟩⋯⟨newPost⟩.
