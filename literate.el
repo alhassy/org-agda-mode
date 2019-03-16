@@ -50,12 +50,14 @@
    Use haskell as the Org source block language since I do not have nice colouring otherwise.
   "
   (interactive)
-  (let ((here (line-number-at-pos))) ;; remember current line
+  (let ((here-line (line-number-at-pos)) ;; remember current line
+	(here-column (current-column)))
     (rewrite-ends "\\begin{code}" "\\end{code}" "#+BEGIN_SRC org-agda" "#+END_SRC")
     (rewrite-ends "\\begin{spec}" "\\end{spec}" "#+BEGIN_EXAMPLE org-agda" "#+END_EXAMPLE")
     ;; (sit-for 2) ;; necessary for the slight delay between the agda2 commands
     (org-mode)
-    (org-goto-line here)    ;; personal function, see my init.org
+    (org-goto-line here-line) ;; defined above
+    (move-to-column here-column)
   )
 )
 
@@ -64,13 +66,15 @@
    Use haskell as the Org source block language since I do not have nice colouring otherwise.
   "
   (interactive)
-  (let ((here (line-number-at-pos))) ;; remember current line
+  (let ((here-line (line-number-at-pos)) ;; remember current line
+	(here-column (current-column)))  ;; and current column
     (rewrite-ends "#+BEGIN_SRC org-agda" "#+END_SRC" "\\begin{code}" "\\end{code}")
     (rewrite-ends "#+BEGIN_EXAMPLE org-agda" "#+END_EXAMPLE" "\\begin{spec}" "\\end{spec}")
     (agda2-mode)
     (sit-for 1) ;; necessary for the slight delay between the agda2 commands
     (agda2-load)
-    (goto-line here)
+    (goto-line here-line)
+    (move-to-column here-column)
   )
 )
 
