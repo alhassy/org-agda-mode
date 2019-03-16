@@ -52,8 +52,8 @@
   "
   (interactive)
   (let ((here (line-number-at-pos))) ;; remember current line
-    (rewrite-ends "\\begin{code}\n" "\n\\end{code}" "#+BEGIN_SRC org-agda\n" "\n#+END_SRC")
-    (rewrite-ends "\\begin{spec}\n" "\n\\end{spec}" "#+BEGIN_EXAMPLE org-agda\n" "\n#+END_EXAMPLE")
+    (rewrite-ends "\\begin{code}" "\\end{code}" "#+BEGIN_SRC org-agda" "#+END_SRC")
+    (rewrite-ends "\\begin{spec}" "\\end{spec}" "#+BEGIN_EXAMPLE org-agda" "#+END_EXAMPLE")
     ;; (sit-for 2) ;; necessary for the slight delay between the agda2 commands
     (org-mode)
     (org-goto-line here)    ;; personal function, see my init.org
@@ -66,8 +66,8 @@
   "
   (interactive)
   (let ((here (line-number-at-pos))) ;; remember current line
-    (rewrite-ends "#+BEGIN_SRC org-agda\n" "#+END_SRC" "\\begin{code}\n" "\\end{code}")
-    (rewrite-ends "#+BEGIN_EXAMPLE org-agda\n" "#+END_EXAMPLE" "\\begin{spec}\n" "\\end{spec}")
+    (rewrite-ends "#+BEGIN_SRC org-agda" "#+END_SRC" "\\begin{code}" "\\end{code}")
+    (rewrite-ends "#+BEGIN_EXAMPLE org-agda" "#+END_EXAMPLE" "\\begin{spec}" "\\end{spec}")
     (agda2-mode)
     (sit-for 1) ;; necessary for the slight delay between the agda2 commands
     (agda2-load)
