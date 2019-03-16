@@ -1,4 +1,4 @@
-;; This file is generated from literate.lagda.
+;; This file has diverged from literate.lagda.
 
 (defun rewrite-ends (pre post new-pre new-post)
   "Perform the following in-buffer rewrite: ⟨pre⟩⋯⟨post⟩ ↦ ⟨newPre⟩⋯⟨newPost⟩.
