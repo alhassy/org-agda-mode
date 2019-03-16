@@ -1,4 +1,22 @@
 ;; This file has diverged from literate.lagda.
+;;
+;; Changes:
+;; - rewrote rewrite ends
+;; - inserted org-goto-line
+
+(defun org-goto-line (line)
+  "Go to the indicated line, unfolding the parent Org header.
+
+   Implementation: Go to the line, then look at the 1st previous
+   org header, now we can unfold it whence we do so, then we go
+   back to the line we want to be at.
+  "
+  (interactive)
+  (goto-line line)
+  (org-previous-visible-heading 1)
+  (org-cycle)
+  (goto-line line)
+)
 
 (defun rewrite-ends (pre post new-pre new-post)
   "Perform the following in-buffer rewrite: ⟨pre⟩⋯⟨post⟩ ↦ ⟨newPre⟩⋯⟨newPost⟩.
