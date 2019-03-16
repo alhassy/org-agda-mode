@@ -3,6 +3,7 @@
 ;; Changes:
 ;; - rewrote rewrite ends
 ;; - inserted org-goto-line
+;; - made the mode switch a toggle bound to C-x C-a
 
 (defun org-goto-line (line)
   "Go to the indicated line, unfolding the parent Org header.
@@ -74,7 +75,7 @@
   )
 )
 
-(local-set-key (kbd "C-x C-a") 'org-to-lagda)
-(local-set-key (kbd "C-x C-o") 'lagda-to-org)
-
-;; Maybe consider a simple “toggle” instead?
+(add-hook 'org-mode-hook
+          (lambda () (local-set-key (kbd "C-x C-a") 'org-to-lagda)))
+(add-hook 'agda2-mode-hook
+          (lambda () (local-set-key (kbd "C-x C-a") 'lagda-to-org)))
