@@ -1,9 +1,4 @@
-;; This file has diverged from literate.lagda.
-;;
-;; Changes:
-;; - rewrote rewrite ends
-;; - inserted org-goto-line
-;; - made the mode switch a toggle bound to C-x C-a
+;; This file is generated from literate.lagda.
 
 (defun org-goto-line (line)
   "Go to the indicated line, unfolding the parent Org header.
@@ -44,7 +39,6 @@
     )
   )
 
-
 (defun lagda-to-org ()
   "Transform literate Agda blocks into Org-mode source blocks.
    Use haskell as the Org source block language since I do not have nice colouring otherwise.
@@ -52,9 +46,10 @@
   (interactive)
   (let ((here-line (line-number-at-pos)) ;; remember current line
 	(here-column (current-column)))
-    (rewrite-ends "\\begin{code}" "\\end{code}" "#+BEGIN_SRC org-agda" "#+END_SRC")
-    (rewrite-ends "\\begin{spec}" "\\end{spec}" "#+BEGIN_EXAMPLE org-agda" "#+END_EXAMPLE")
-    ;; (sit-for 2) ;; necessary for the slight delay between the agda2 commands
+    (rewrite-ends "\n\\begin{code}"              "\n\\end{code}"
+                  "\n#+BEGIN_SRC org-agda"       "\n#+END_SRC")
+    (rewrite-ends "\n\\begin{spec}"              "\n\\end{spec}"
+                  "\n#+BEGIN_EXAMPLE org-agda"   "\n#+END_EXAMPLE")
     (org-mode)
     (org-goto-line here-line) ;; defined above
     (move-to-column here-column)
@@ -68,8 +63,10 @@
   (interactive)
   (let ((here-line (line-number-at-pos)) ;; remember current line
 	(here-column (current-column)))  ;; and current column
-    (rewrite-ends "#+BEGIN_SRC org-agda" "#+END_SRC" "\\begin{code}" "\\end{code}")
-    (rewrite-ends "#+BEGIN_EXAMPLE org-agda" "#+END_EXAMPLE" "\\begin{spec}" "\\end{spec}")
+    (rewrite-ends "\n#+BEGIN_SRC org-agda"       "\n#+END_SRC"
+                  "\n\\begin{code}"              "\n\\end{code}")
+    (rewrite-ends "\n#+BEGIN_EXAMPLE org-agda"   "\n#+END_EXAMPLE"
+                  "\n\\begin{spec}"              "\n\\end{spec}")
     (agda2-mode)
     (sit-for 0.1) ;; necessary for the slight delay between the agda2 commands
     (agda2-load)

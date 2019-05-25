@@ -15,7 +15,7 @@
 #+INCLUDE: ~/Dropbox/MyUnicodeSymbols.org
 
 * Abstract       :ignore:
-#+BEGIN_CENTER 
+#+BEGIN_CENTER
 *Abstract*
 
 [[https://en.wikipedia.org/wiki/Literate_programming][Literate Programming]] is essentially the idea that code is enclosed in documentation
@@ -33,7 +33,8 @@ as a legal lexeme thereby rendering a static highlighting theme impossible.
 
 The result of this Elisp exploration is that by ~C-x C-a~
 we can shift into Agda-mode and use its interactive features to construct our program;
-then return to an Org-mode literate programming style afterwards with ~C-x C-o~
+then return to an Org-mode literate programming style afterwards with
+another ~C-x C-a~
 ---/both translations remember the position we're working at!/
 #+END_CENTER
 
@@ -104,33 +105,33 @@ for determining whether a name is a type or not:
 (define-generic-mode
     'org-agda-mode                      ;; name of the mode
     (list '("{-" . "-}"))               ;; comments delimiter
-    org-agda-keywords    
-    ;; font lock list: Order of colouring matters; 
+    org-agda-keywords
+    ;; font lock list: Order of colouring matters;
     ;; the numbers refer to the subpart, or the whole(0), that should be coloured.
     (list
      ;; To begin with, after "module" or after "import" should be purple
      ;; Note the SPACE below.
-     '("\\(module\\|import\\) \\([a-zA-Z0-9\-_\.]+\\)" 2 '((t (:foreground "purple")))) 
-     
+     '("\\(module\\|import\\) \\([a-zA-Z0-9\-_\.]+\\)" 2 '((t (:foreground "purple"))))
+
      ;; Agda special symbols: as
      '(" as" 0 'agda2-highlight-symbol-face)
-     
+
      ;; Type, and constructor, names begin with a capital letter  --personal convention.
-     ;; They're preceded by either a space or an open delimiter character. 
+     ;; They're preceded by either a space or an open delimiter character.
      '("\\( \\|\s(\\)\\([A-Z]+\\)\\([a-zA-Z0-9\-_]*\\)" 0 'font-lock-type-face)
      '("ℕ" 0 'font-lock-type-face)
-     
+
      ;; variables & function names, as a personal convention, begin with a lower case
      '("\\([a-z]+\\)\\([a-zA-Z0-9\-_]*\\)" 0 '((t (:foreground "medium blue"))))
-     
+
      ;; colour numbers
      '("\\([0-9]+\\)" 1   '((t (:foreground "purple")))) ;; 'font-lock-constant-face)
-     
+
      ;; other faces to consider:
      ;; 'font-lock-keyword-face 'font-lock-builtin-face 'font-lock-function-name-face
      ;;' font-lock-variable-name-face
      )
-    
+
      nil                                                   ;; files that trigger this mode
      nil                                                   ;; any other functions to call
     "My custom Agda highlighting mode for use *within* Org-mode."     ;; doc string
@@ -144,13 +145,36 @@ for determining whether a name is a type or not:
 
 I do not insist that ~org-agda-mode~ be activated on any particular files by default.
 
-* (~lagda-to-org)~ and (~org-to-lagda)~
+* (~lagda-to-org~) and (~org-to-lagda~)
 
-Agda would not typecheck a non-~lagda~, or non-~agda~, file therefore
-I cannot use Org-mode multiple mode settings.
+Previously, Agda would not typecheck a non-~lagda~, or non-~agda~, file therefore
+I could not use Org-mode multiple mode settings.
+
+Recent versions of Agda will typecheck files with other extensions,
+but as of 2.6.0, the interactive mode does not work on such files.
+
 I will instead merely
 swap the syntax of the modes then reload the desired mode.
 --It may not be ideal, but it does what I want in a fast enough fashion.
+
+In order to maintain position when switching back to Org-mode,
+I define a function which not only goes to the appropriate line,
+but unfolds the document to show that line.
+
+#+BEGIN_SRC emacs-lisp
+(defun org-goto-line (line)
+  "Go to the indicated line, unfolding the parent Org header.
+
+   Implementation: Go to the line, then look at the 1st previous
+   org header, now we can unfold it whence we do so, then we go
+   back to the line we want to be at.
+  "
+  (goto-line line)
+  (org-back-to-heading 1)
+  (org-cycle)
+  (goto-line line)
+  )
+#+END_SRC
 
 Below we put together a way to make rewrites ~⟨pre⟩⋯⟨post⟩ ↦ ⟨newPre⟩⋯⟨newPost⟩~
 then use that with the rewrite tokens being ~#+BEGIN_SRC~ and ~|begin{code}~ for
@@ -158,41 +182,34 @@ literate Agda, as well as their closing partners.
 # Using a real `\' results in parse errors when Agda mode is activated.
 
 #+BEGIN_SRC emacs-lisp
-;; “The long lost Emacs string manipulation library”
-;; https://github.com/magnars/s.el
-(require 's)
-
-(defun strip (pre post it)  
-  "A simple extraction: it = ⟨pre⟩it₀⟨post⟩ ↦ it₀." 
-  (s-chop-prefix pre (s-chop-suffix post it)) )
-
-(defun rewrite-ends (pre post newPre newPost)
+(defun rewrite-ends (pre post new-pre new-post)
   "Perform the following in-buffer rewrite: ⟨pre⟩⋯⟨post⟩ ↦ ⟨newPre⟩⋯⟨newPost⟩.
   For example, for rewriting begin-end code blocks from Org-mode to something
   else, say a language's default literate mode.
 
-  Warning: The body, the “⋯”, cannot contain the `#` character.
-  I do this so that the search does not go to the very last occurence of `#+END_SRC`;
-  which is my primary instance of `pre`.
+  The search for the string ⟨pre⟩⋯⟨post⟩ is non-greedy, i.e. will find
+  (in order) the minimal strings matching ⟨pre⟩⋯⟨post⟩.
 
   In the arguments, only symbol `\` needs to be escaped.
-
-  Implementation: Match the pre, then any characteer that is not `#`, then the post.
-  Hence, the body cannot contain a `#` character!
-  In Agda this is not an issue, since we can use its Unicode cousin `♯` instead.
   "
-  (let* ((rxPre     (regexp-quote pre))
-         (rxPost    (regexp-quote post))
-         (altered (replace-regexp-in-string (concat rxPre "\\([^\\#]\\|\n\\)*" rxPost)
-                  (lambda (x) (concat newPre (strip pre post x) newPost))
-                  (buffer-string) 'no-fixed-case 'new-text-is-literal)))
-      (erase-buffer)
-      (insert altered)
-   )
-)
+  (let ((rx-pre  (concat "\\(" (regexp-quote pre)  "\\)"))
+        (rx-post (concat "\\(" (regexp-quote post) "\\)"))
+        ;; Code to match any characters (including newlines) based on https://www.emacswiki.org/emacs/MultilineRegexp
+        ;; This version requires we end in a newline,
+        ;; and uses the “non-greedy” * operator, *?, so we will match the minimal string.
+        (body "\\(.*\n\\)*?"))
+    (beginning-of-buffer)
+    (while (re-search-forward (concat rx-pre body rx-post) nil t) ;; nil to search whole buffer, t to not error
+      ;; Matched string 1 is the pre, matched string 3 is the post.
+      ;; Optionals: fixed-case, literal, use buffer, substring
+      (replace-match new-pre  t t nil 1)
+      (replace-match new-post t t nil 3)
+      )
+    )
+  )
 #+END_SRC
 
-# Note that remebering-position in `rewrite-ends` does not work as expected
+# Note that remembering-position in `rewrite-ends` does not work as expected
 # since I would go to the position, then change to a different mode, say org-mode,
 # which then folds all sections thereby obscuring the position we were at.
 
@@ -204,12 +221,15 @@ The two rewriting utilities:
    Use haskell as the Org source block language since I do not have nice colouring otherwise.
   "
   (interactive)
-  (let ((here (line-number-at-pos))) ;; remember current line
-    (rewrite-ends "\\begin{code}\n" "\n\\end{code}" "#+BEGIN_SRC org-agda\n" "\n#+END_SRC")
-    (rewrite-ends "\\begin{spec}\n" "\n\\end{spec}" "#+BEGIN_EXAMPLE org-agda\n" "\n#+END_EXAMPLE")
-    ;; (sit-for 2) ;; necessary for the slight delay between the agda2 commands
+  (let ((here-line (line-number-at-pos)) ;; remember current line
+        (here-column (current-column)))
+    (rewrite-ends "\n\\begin{code}"              "\n\\end{code}"
+                  "\n#+BEGIN_SRC org-agda"       "\n#+END_SRC")
+    (rewrite-ends "\n\\begin{spec}"              "\n\\end{spec}"
+                  "\n#+BEGIN_EXAMPLE org-agda"   "\n#+END_EXAMPLE")
     (org-mode)
-    (org-goto-line here)    ;; personal function, see my init.org
+    (org-goto-line here-line) ;; defined above
+    (move-to-column here-column)
   )
 )
 
@@ -218,24 +238,28 @@ The two rewriting utilities:
    Use haskell as the Org source block language since I do not have nice colouring otherwise.
   "
   (interactive)
-  (let ((here (line-number-at-pos))) ;; remember current line
-    (rewrite-ends "#+BEGIN_SRC org-agda\n" "#+END_SRC" "\\begin{code}\n" "\\end{code}")
-    (rewrite-ends "#+BEGIN_EXAMPLE org-agda\n" "#+END_EXAMPLE" "\\begin{spec}\n" "\\end{spec}")
+  (let ((here-line (line-number-at-pos)) ;; remember current line
+        (here-column (current-column)))  ;; and current column
+    (rewrite-ends "\n#+BEGIN_SRC org-agda"       "\n#+END_SRC"
+                  "\n\\begin{code}"              "\n\\end{code}")
+    (rewrite-ends "\n#+BEGIN_EXAMPLE org-agda"   "\n#+END_EXAMPLE"
+                  "\n\\begin{spec}"              "\n\\end{spec}")
     (agda2-mode)
-    (sit-for 1) ;; necessary for the slight delay between the agda2 commands
+    (sit-for 0.1) ;; necessary for the slight delay between the agda2 commands
     (agda2-load)
-    (goto-line here)
+    (goto-line here-line)
+    (move-to-column here-column)
   )
 )
 #+END_SRC
 
-Handy-dandy shortcuts:
+Handy-dandy shortcuts, which are alternated on mode change:
 
 #+BEGIN_SRC emacs-lisp
-(local-set-key (kbd "C-x C-a") 'org-to-lagda)
-(local-set-key (kbd "C-x C-o") 'lagda-to-org)
-
-;; Maybe consider a simple “toggle” instead?
+(add-hook 'org-mode-hook
+          (lambda () (local-set-key (kbd "C-x C-a") 'org-to-lagda)))
+(add-hook 'agda2-mode-hook
+          (lambda () (local-set-key (kbd "C-x C-a") 'lagda-to-org)))
 #+END_SRC
 
 # *TODO* Method to turn an begin{spec} into a begin{code}
@@ -246,7 +270,7 @@ Handy-dandy shortcuts:
 
 # Useful for debugging.
 #
-#+HTML: <!-- 
+#+HTML: <!--
 #+BEGIN_EXAMPLE emacs-lisp
 (unload-feature 'org-agda-mode)
 (load-file "org-agda-mode.el")
@@ -255,7 +279,7 @@ Handy-dandy shortcuts:
 
 Here's some sample fragments, whose editing can be turned on with ~C-x C-a~.
 \begin{code}
-mmodule literate where
+module literate where
 
 data ℕ : Set where
   Zero : ℕ
@@ -284,14 +308,14 @@ hole = {!!}
 \end{code}
 
 Here's a literate Agda ~spec~-ification environment, which corresponds to an Org-mode ~EXAMPLE~ block.
-\begin{spec}
+#+BEGIN_EXAMPLE org-agda
 module this-is-a-spec {A : Set} (_≤_ : A → A → Set) where
 
   maximum-specfication : (candidate : A) → Set
   maximum-specfication c = ?
-\end{spec}
+#+END_EXAMPLE
 
-* Summary 
+* Summary
 # of Utilities Provided
 
 We now have the utility functions:
@@ -307,7 +331,7 @@ in this document.
 
 # -- E.g., this begin{code} won't be rewritten;
 # -- neither will the in-line #+END_SRC. Nice!
-# 
+#
 # Alt+x describe-key Ctrl+h k, then type the key combination.
 # (describe-function 'agda2-module-contents-maybe-toplevel)
 
@@ -480,7 +504,7 @@ three main ~AlBasmala~ features: Preview, Commit, & Publish.
 
   ;; Generate latex file, duh.
   (org-latex-export-to-latex)
-  
+
   ;; Call that latex file a Literate Agda file.
   ;; Delete any exisitng ones lest we don't succeed.
   (delete-file "literate2.lagda")
@@ -488,8 +512,8 @@ three main ~AlBasmala~ features: Preview, Commit, & Publish.
 
   ;; For some reason I get option clashes with: \usepackage[utf8]{inputenc}
   ;; So I'll erase it for now.
-  (re-replace-in-file "literate2.lagda" 
-                      "\\\\usepackage\\[utf8\\]{inputenc}" 
+  (re-replace-in-file "literate2.lagda"
+                      "\\\\usepackage\\[utf8\\]{inputenc}"
                       (lambda (x) "% musa commented out: inputenc "))
 
 
@@ -505,14 +529,14 @@ three main ~AlBasmala~ features: Preview, Commit, & Publish.
   (copy-file "latex/agda.sty" "./agda.sty" 'please-overwrite)
 
   (shell-command "evince literate_coloured.pdf")
-  
+
   (kill-other-buffers)
 )
 
 ;;
 ;; (progn
 ;;   (find-file "literate2.lagda")
-;;   (goto-line 4) 
+;;   (goto-line 4)
 ;;   (kill-line)
 ;;   (save-buffer)
 ;;   (kill-buffer)
@@ -529,8 +553,8 @@ three main ~AlBasmala~ features: Preview, Commit, & Publish.
 ;; (eshell-command (concat "DirNAME=" DirNAME "; Dir=. ; NAME=" NAME
 ;;                "; agda --latex $DirNAME.lagda "
 ;;                "&& cd latex && pdflatex $DirNAME.tex "))
-;; 
-;; DirNAME=/home/musa/Dropbox/literate2; Dir=. ; NAME=literate2; agda --latex $DirNAME.lagda && cd latex && pdflatex $DirNAME.tex 
+;;
+;; DirNAME=/home/musa/Dropbox/literate2; Dir=. ; NAME=literate2; agda --latex $DirNAME.lagda && cd latex && pdflatex $DirNAME.tex
 
 (describe-function 'copy-file)
 
@@ -547,7 +571,7 @@ three main ~AlBasmala~ features: Preview, Commit, & Publish.
 ;;
 ;; my old incantations from MusaAgdaColour.el:
 ;; (concat "; sed -i '$ d' ../" DirNAME ".tex") ;; delete postmatter
-;;   (concat "; sed -e '1,7d' -i ../" DirNAME ".tex")    ;; delete prematter                 
+;;   (concat "; sed -e '1,7d' -i ../" DirNAME ".tex")    ;; delete prematter
 
 #+END_SRC
 
@@ -558,10 +582,10 @@ We can simply load in the elisp file every time we open up a
 of a file, or alternatively we execute the following /once/.
 #+BEGIN_SRC emacs-lisp :tangle no
 (set 'agda2-mode-hook nil)
-(add-hook 'agda2-mode-hook 
+(add-hook 'agda2-mode-hook
   (lambda ()
    (org-babel-load-file "~/Dropbox/lagda-with-org.org")
-   
+
    (message "Loaded lagda-with-org")
   )
 )
@@ -575,11 +599,11 @@ C-c C-c: evalute src block
 #+NAME: make-readme
 #+BEGIN_SRC emacs-lisp :results none
 (with-temp-buffer
-    (insert 
+    (insert
     "#+EXPORT_FILE_NAME: README.md
      #+HTML: <h1> org-agda-mode </h1>
 
-     An Emacs mode for working with 
+     An Emacs mode for working with
      Agda code in an Org-mode like fashion, more or less.
 
      The following can also be read as a [[https://alhassy.github.io/literate/][blog post]].
