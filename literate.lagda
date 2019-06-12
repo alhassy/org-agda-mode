@@ -180,7 +180,7 @@ but as of 2.6.0, the interactive mode does not work on such files.
 
 I will instead merely
 swap the syntax of the modes then reload the desired mode.
---It may not be ideal, but it does what I want in a fast enough fashion.
+--it may not be ideal, but it does what I want in a fast enough fashion.
 
 In order to maintain position when switching back to Org-mode,
 I define a function which not only goes to the appropriate line,
@@ -204,8 +204,7 @@ but unfolds the document to show that line.
 Below we put together a way to make rewrites ~⟨pre⟩⋯⟨post⟩ ↦ ⟨newPre⟩⋯⟨newPost⟩~
 then use that with the rewrite tokens being ~#+BEGIN_SRC~ and ~|begin{code}~ for
 literate Agda, as well as their closing partners.
-# Using a real `\' results in parse errors when Agda mode is activated.
-
+# Using a real ‘\’ results in parse errors when Agda mode is activated.
 #+BEGIN_SRC emacs-lisp
 (defun rewrite-ends (pre post new-pre new-post)
   "Perform the following in-buffer rewrite: ⟨pre⟩⋯⟨post⟩ ↦ ⟨newPre⟩⋯⟨newPost⟩.
@@ -234,10 +233,6 @@ literate Agda, as well as their closing partners.
   )
 #+END_SRC
 
-# Note that remembering-position in `rewrite-ends` does not work as expected
-# since I would go to the position, then change to a different mode, say org-mode,
-# which then folds all sections thereby obscuring the position we were at.
-
 The two rewriting utilities:
 
 #+BEGIN_SRC emacs-lisp
@@ -247,7 +242,9 @@ The two rewriting utilities:
   "
   (interactive)
   (let ((here-line (line-number-at-pos)) ;; remember current line
-        (here-column (current-column)))
+        (here-column (current-column))
+        (enable-local-variables :safe)
+        )
     (rewrite-ends "\n\\begin{code}"              "\n\\end{code}"
                   "\n#+BEGIN_SRC org-agda"       "\n#+END_SRC")
     (rewrite-ends "\n\\begin{spec}"              "\n\\end{spec}"
@@ -256,6 +253,7 @@ The two rewriting utilities:
     (org-goto-line here-line) ;; defined above
     (move-to-column here-column)
   )
+  (message "Welcome to Org-mode, %s!" user-full-name)
 )
 
 (defun org-to-lagda ()
@@ -264,7 +262,9 @@ The two rewriting utilities:
   "
   (interactive)
   (let ((here-line (line-number-at-pos)) ;; remember current line
-        (here-column (current-column)))  ;; and current column
+        (here-column (current-column))  ;; and current column
+        (enable-local-variables :safe))
+
     (rewrite-ends "\n#+BEGIN_SRC org-agda"       "\n#+END_SRC"
                   "\n\\begin{code}"              "\n\\end{code}")
     (rewrite-ends "\n#+BEGIN_EXAMPLE org-agda"   "\n#+END_EXAMPLE"
@@ -275,21 +275,26 @@ The two rewriting utilities:
     (goto-line here-line)
     (move-to-column here-column)
   )
+   (message "Welcome to Agda-mode, %s!" user-full-name)
 )
 #+END_SRC
 
-Handy-dandy shortcuts, which are alternated on mode change:
+#+RESULTS:
+: org-to-lagda
 
+*Notice!* The toggling utilities automatically enable all /safe/ local variables
+in an file ---c.f., the ~(enable-local-variables :all)~ lines above.
+Many of our files tend to have local variables and that is the reason
+we allow us.
+
+Handy-dandy shortcuts, which are alternated on mode change:
 #+BEGIN_SRC emacs-lisp
 (add-hook 'org-mode-hook
           (lambda () (local-set-key (kbd "C-x C-a") 'org-to-lagda)))
+
 (add-hook 'agda2-mode-hook
           (lambda () (local-set-key (kbd "C-x C-a") 'lagda-to-org)))
 #+END_SRC
-
-# *TODO* Method to turn an begin{spec} into a begin{code}
-# Maybe this exists for Org-blocks: SRC ↔ EXAMPLE?
-# Maybe this exists for agda2-mode?
 
 * Example
 
@@ -303,7 +308,7 @@ Handy-dandy shortcuts, which are alternated on mode change:
 #+HTML: -->
 
 Here's some sample fragments, whose editing can be turned on with ~C-x C-a~.
-\begin{code}
+#+BEGIN_SRC org-agda
 module literate where
 
 data ℕ : Set where
@@ -330,7 +335,7 @@ postulate magic : Set
 hole : magic
 hole = {!!}
 
-\end{code}
+#+END_SRC
 
 Here's a literate Agda ~spec~-ification environment, which corresponds to an Org-mode ~EXAMPLE~ block.
 #+BEGIN_EXAMPLE org-agda
@@ -341,13 +346,12 @@ module this-is-a-spec {A : Set} (_≤_ : A → A → Set) where
 #+END_EXAMPLE
 
 * Summary
-# of Utilities Provided
 
 We now have the utility functions:
 
 | _Command_ | _Action_                                                      |
 | ~C-x C-a~ | transform org ~org-agda~ blocks to literate Agda blocs        |
-| ~C-x C-o~ | transform literate Agda code delimiters to org ~org-agda~ src |
+| ~C-x C-a~ | transform literate Agda code delimiters to org ~org-agda~ src |
 
 This was fun: I learned a lot of elisp!
 Hopefully I can make use of this, in the small, if not in the large
@@ -377,6 +381,15 @@ in this document.
 2. Discussion on other options: outline-mode or outshine or multimod.e
 3. Improved integration with [[https://alhassy.github.io/AlBasmala/][AlBasmala]] for better resulting PDFs.
 4. Switch between EXAMPLE & SRC; ie begin vs spec.
+
+# *TODO* Method to turn an begin{spec} into a begin{code}
+# Maybe this exists for Org-blocks: SRC ↔ EXAMPLE?
+# Maybe this exists for agda2-mode?
+
+
+# Note that remembering-position in `rewrite-ends` does not work as expected
+# since I would go to the position, then change to a different mode, say org-mode,
+# which then folds all sections thereby obscuring the position we were at.
 
 * COMMENT Construction Sites to Eventually Return to :backlog:
 ** DONE [OLD] ~lagda-to-org~ and ~org-to-lagda~                :works:abandoned:
@@ -648,7 +661,7 @@ Note the existence of: (agda2-restart)
 org-shifttab
 orgstruct-mode
 
-NOTE that AlBasmala calls the source file NAME.org, so below we change that to
+NOTE: AlBasmala calls the source file NAME.org, so below we change that to
 this file's name.
 
 # Local Variables:
@@ -656,8 +669,6 @@ this file's name.
 # eval: (when nil (load-file "~/alhassy.github.io/content/AlBasmala.el"))
 # eval: (setq NAMEorg (buffer-name))
 # eval: (setq pdfsLocation "~/alhassy.github.io/assets/pdfs/")
-# eval: (org-mode)
-# eval: (org-babel-tangle)
 # eval: (org-babel-load-file "literate.lagda")
 # eval: (progn (org-babel-goto-named-src-block "make-readme") (org-babel-execute-src-block) (outline-hide-sublevels 1))
 # compile-command: (progn (org-babel-tangle) (my-org-html-export-to-html))

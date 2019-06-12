@@ -45,7 +45,9 @@
   "
   (interactive)
   (let ((here-line (line-number-at-pos)) ;; remember current line
-	(here-column (current-column)))
+        (here-column (current-column))
+        (enable-local-variables :safe)
+        )
     (rewrite-ends "\n\\begin{code}"              "\n\\end{code}"
                   "\n#+BEGIN_SRC org-agda"       "\n#+END_SRC")
     (rewrite-ends "\n\\begin{spec}"              "\n\\end{spec}"
@@ -54,6 +56,7 @@
     (org-goto-line here-line) ;; defined above
     (move-to-column here-column)
   )
+  (message "Welcome to Org-mode, %s!" user-full-name)
 )
 
 (defun org-to-lagda ()
@@ -62,7 +65,9 @@
   "
   (interactive)
   (let ((here-line (line-number-at-pos)) ;; remember current line
-	(here-column (current-column)))  ;; and current column
+        (here-column (current-column))  ;; and current column
+        (enable-local-variables :safe))
+
     (rewrite-ends "\n#+BEGIN_SRC org-agda"       "\n#+END_SRC"
                   "\n\\begin{code}"              "\n\\end{code}")
     (rewrite-ends "\n#+BEGIN_EXAMPLE org-agda"   "\n#+END_EXAMPLE"
@@ -73,9 +78,11 @@
     (goto-line here-line)
     (move-to-column here-column)
   )
+   (message "Welcome to Agda-mode, %s!" user-full-name)
 )
 
 (add-hook 'org-mode-hook
           (lambda () (local-set-key (kbd "C-x C-a") 'org-to-lagda)))
+
 (add-hook 'agda2-mode-hook
           (lambda () (local-set-key (kbd "C-x C-a") 'lagda-to-org)))
