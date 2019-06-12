@@ -10,18 +10,19 @@
 #+SOURCE: https://raw.githubusercontent.com/alhassy/org-agda-mode/master/literate.lagda
 
 # (shell-command "export PATH=\"~/.cabal/bin/$PATH\"")
-
+#
 # LaTeX_HEADER:   \usepackage{agda}
-#+INCLUDE: ~/Dropbox/MyUnicodeSymbols.org
+# INCLUDE: ~/Dropbox/MyUnicodeSymbols.org
 
 * Abstract       :ignore:
 #+BEGIN_CENTER
 *Abstract*
+#+END_CENTER
 
 [[https://en.wikipedia.org/wiki/Literate_programming][Literate Programming]] is essentially the idea that code is enclosed in documentation
 rather than the comments being surrounded by code. The idea is that software
-ought to be written like an essay to be read by a human; from this code for the
-machine can be extracted.
+ought to be written like an essay to be read by a human; from this, code for the
+machine can then be extracted.
 
 The articles on this blog are meant to be in such a format and as such
 I use [[https://www.offerzen.com/blog/literate-programming-empower-your-writing-with-emacs-org-mode][Org-mode]] as my markup for producing the HTMLs and PDFs.
@@ -32,11 +33,12 @@ Coding is interactive via holes and it permits almost any sequence of characters
 as a legal lexeme thereby rendering a static highlighting theme impossible.
 
 The result of this Elisp exploration is that by ~C-x C-a~
-we can shift into Agda-mode and use its interactive features to construct our program;
+we can toggle into Agda-mode and use its interactive features to construct our program;
 then return to an Org-mode literate programming style afterwards with
 another ~C-x C-a~
----/both translations remember the position we're working at!/
-#+END_CENTER
+---/both translations remember the position we're working at and allow the editing features of their respective modes!/
+
+( Thanks to [[https://github.com/armkeh][Mark Armstrong]] for significant testing and contributions! )
 
 #+HTML: <!--
 #+BEGIN_SRC emacs-lisp
@@ -46,6 +48,29 @@ another ~C-x C-a~
 ;; This file is generated from literate.lagda.
 #+END_SRC
 #+HTML: -->
+
+* “Agda now supports org files” ---Not Really
+
+As of Agda 2.6.0 ---which came after this article was originally written---
+there is now support for literate Org-mode support using ~agda2~ org-src blocks.
+
+The [[https://github.com/agda/agda/pull/3548][pull request]] was by one of my then students who found the use of this ‘org-agda’
+setup to be sufficiently useful to be appreciated by the whole Agda community out-of-the-box.
+
+Unfortunately, currently working with a ~myfile.lagda.org~
+comes with discouraging compromises between the Org- and Agda-modes. Namely:
+1. Interactivity with Agda holes is /not/ supported.
+2. The full editorial capabilities of Org-mode are limited since some
+   features clash with those of Agda-mode.
+
+The solution outline here is not to limit or compromise each role, but rather
+provide both and instead allow the user, you, to control when you would like
+to be /documenting vs. developing/ ---the resulting system is sufficiently fast
+to toggle between the modes; e.g., the somewhat large categorical development
+[[https://alhassy.github.io/PathCat/][Graphs are to categories as lists are to monoids]] is written literately using org-agda.
+
+Besides the core capability to switch between the different modes, we also provide
+an elementary yet /extensible/ syntax colouring mechanism for Agda's non-standard highlighting.
 
 * Agda Syntax Highlighting With ~org-agda-mode~
 
