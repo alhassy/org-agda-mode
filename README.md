@@ -8,14 +8,14 @@ The following can also be read as a [blog post](https://alhassy.github.io/litera
 
 # Table of Contents
 
-1.  [“Agda now supports org files” &#x2014;Not Really](#org2aa00b9)
-2.  [Agda Syntax Highlighting With `org-agda-mode`](#orgca9836f)
-    1.  [Keywords](#orga31fe78)
-    2.  [The `generic-mode` Definition](#org21f70cc)
-3.  [(`lagda-to-org`) and (`org-to-lagda`)](#orga5cbf79)
-4.  [Example](#org3ded3cc)
-5.  [Summary](#orgc53f2c2)
-6.  [Sources Consulted](#org7c65319)
+1.  [“Agda now supports org files” &#x2014;Not Really](#org2499b01)
+2.  [Agda Syntax Highlighting With `org-agda-mode`](#org8b7b46a)
+    1.  [Keywords](#orgc211307)
+    2.  [The `generic-mode` Definition](#org7d50d1e)
+3.  [(`lagda-to-org`) and (`org-to-lagda`)](#org1b7263a)
+4.  [Example](#orgfff6708)
+5.  [Summary](#org041989a)
+6.  [Sources Consulted](#org55d9c6c)
 
 <div class="org-center">
 **Abstract**
@@ -51,7 +51,7 @@ another `C-x C-a`
 -->
 
 
-<a id="org2aa00b9"></a>
+<a id="org2499b01"></a>
 
 # “Agda now supports org files” &#x2014;Not Really
 
@@ -78,7 +78,7 @@ Besides the core capability to switch between the different modes, we also provi
 an elementary yet *extensible* syntax colouring mechanism for Agda's non-standard highlighting.
 
 
-<a id="orgca9836f"></a>
+<a id="org8b7b46a"></a>
 
 # Agda Syntax Highlighting With `org-agda-mode`
 
@@ -90,7 +90,7 @@ syntax.
     (require 'generic-x)
 
 
-<a id="orga31fe78"></a>
+<a id="orgc211307"></a>
 
 ## Keywords
 
@@ -122,7 +122,7 @@ From Agda's [“read the docs”](https://agda.readthedocs.io/en/v2.5.4.1/langua
 			      "using" "where" "with"))
 
 
-<a id="org21f70cc"></a>
+<a id="org7d50d1e"></a>
 
 ## The `generic-mode` Definition
 
@@ -136,12 +136,17 @@ for determining whether a name is a type or not:
 </div>
 
     (define-generic-mode
+
 	'org-agda-mode                      ;; name of the mode
+
 	(list '("{-" . "-}"))               ;; comments delimiter
+
 	org-agda-keywords
+
 	;; font lock list: Order of colouring matters;
 	;; the numbers refer to the subpart, or the whole(0), that should be coloured.
 	(list
+
 	 ;; To begin with, after "module" or after "import" should be purple
 	 ;; Note the SPACE below.
 	 '("\\(module\\|import\\) \\([a-zA-Z0-9\-_\.]+\\)" 2 '((t (:foreground "purple"))))
@@ -158,11 +163,11 @@ for determining whether a name is a type or not:
 	 '("\\([a-z]+\\)\\([a-zA-Z0-9\-_]*\\)" 0 '((t (:foreground "medium blue"))))
 
 	 ;; colour numbers
-	 '("\\([0-9]+\\)" 1   '((t (:foreground "purple")))) ;; 'font-lock-constant-face)
+	 '("\\([0-9]+\\)" 1   '((t (:foreground "purple"))))
 
 	 ;; other faces to consider:
 	 ;; 'font-lock-keyword-face 'font-lock-builtin-face 'font-lock-function-name-face
-	 ;;' font-lock-variable-name-face
+	 ;; 'font-lock-variable-name-face 'font-lock-constant-face
 	 )
 
 	 nil                                                   ;; files that trigger this mode
@@ -177,8 +182,33 @@ for determining whether a name is a type or not:
 
 I do not insist that `org-agda-mode` be activated on any particular files by default.
 
+Here is an example code block that obtains this colouring schema.
 
-<a id="orga5cbf79"></a>
+    module literate where
+
+    data ℕ : Set where
+      Zero : ℕ
+      Succ : ℕ → ℕ
+
+    double : ℕ → ℕ
+    double Zero = Zero
+    double (Succ n) = Succ (Succ (double n))
+
+    {- lengthy
+	  multiline
+	    comment -}
+
+    {- No one line comment colouring … Yet -}
+
+    open import Data.Nat as Lib
+
+    camelCaseIdentifier-01 : Lib.ℕ
+    camelCaseIdentifier-01 = let it = 1234 in it
+
+Next, we turn to supporting Agda interactivity with holes.
+
+
+<a id="org1b7263a"></a>
 
 # (`lagda-to-org`) and (`org-to-lagda`)
 
@@ -285,11 +315,10 @@ The two rewriting utilities:
 
     org-to-lagda
 
-**Warning!** The toggling utilities automatically enable all local variables
+**Notice!** The toggling utilities automatically enable all *safe* local variables
 in an file &#x2014;c.f., the `(enable-local-variables :all)` lines above.
 Many of our files tend to have local variables and that is the reason
-we allow us. For your own saftey consider change the above `:all`'s into
-~:safe
+we allow us.
 
 Handy-dandy shortcuts, which are alternated on mode change:
 
@@ -300,7 +329,7 @@ Handy-dandy shortcuts, which are alternated on mode change:
 	      (lambda () (local-set-key (kbd "C-x C-a") 'lagda-to-org)))
 
 
-<a id="org3ded3cc"></a>
+<a id="orgfff6708"></a>
 
 # Example
 
@@ -312,27 +341,6 @@ Handy-dandy shortcuts, which are alternated on mode change:
 -->
 
 Here's some sample fragments, whose editing can be turned on with `C-x C-a`.
-
-    module literate where
-
-    data ℕ : Set where
-      Zero : ℕ
-      Succ : ℕ → ℕ
-
-    double : ℕ → ℕ
-    double Zero = Zero
-    double (Succ n) = Succ (Succ (double n))
-
-    {- lengthy
-	  multiline
-	    comment -}
-
-    {- No one line comment colouring … Yet -}
-
-    open import Data.Nat as Lib
-
-    camelCaseIdentifier-01 : Lib.ℕ
-    camelCaseIdentifier-01 = let it = 1234 in it
 
     postulate magic : Set
 
@@ -347,7 +355,7 @@ Here's a literate Agda `spec`-ification environment, which corresponds to an Org
       maximum-specfication c = ?
 
 
-<a id="orgc53f2c2"></a>
+<a id="org041989a"></a>
 
 # Summary
 
@@ -387,7 +395,7 @@ Hopefully I can make use of this, in the small, if not in the large
 in this document.
 
 
-<a id="org7c65319"></a>
+<a id="org55d9c6c"></a>
 
 # Sources Consulted
 

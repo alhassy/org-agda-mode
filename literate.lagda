@@ -1,3 +1,5 @@
+# (org-babel-load-file "literate.lagda")
+
 #+TITLE: Literate Agda with Org-mode
 #+DESCRIPTION: An Org-mode utility for Agda.
 #+AUTHOR: Musa Al-hassy
@@ -8,6 +10,8 @@
 #+OPTIONS: html-postamble:nil toc:nil
 #+IMAGE: ../assets/img/org_logo.png
 #+SOURCE: https://raw.githubusercontent.com/alhassy/org-agda-mode/master/literate.lagda
+
+#+PROPERTY: header-args :tangle literate.el :comments link
 
 # (shell-command "export PATH=\"~/.cabal/bin/$PATH\"")
 #
@@ -72,15 +76,25 @@ to toggle between the modes; e.g., the somewhat large categorical development
 Besides the core capability to switch between the different modes, we also provide
 an elementary yet /extensible/ syntax colouring mechanism for Agda's non-standard highlighting.
 
-* Agda Syntax Highlighting With ~org-agda-mode~
+* Agda Syntax Highlighting
 
-We produce a new mode in a file named ~org-agda-mode.el~
-so that Org-mode blocks marked with ~org-agda~ will have Agda /approximated/
-syntax.
+We produce a new mode, calling it ~ob-agda-mode~,
+so that Org-mode blocks marked with ~ob-agda~ will have Agda /approximated/
+syntax. By default, if an Emacs major-mode ~<lang>-mode~ exists,
+then blocks marked with ~<lang>~ use that major-mode for editing.
 
-#+BEGIN_SRC emacs-lisp :tangle org-agda-mode.el
+#+BEGIN_SRC emacs-lisp
 ;; To use generic-mode later below.
 (require 'generic-x)
+#+END_SRC
+
+The “ob” is short for “org-babel” since we also wish to provide
+Babel support for Agda. Using ~ob-agda~ marked blocks is awkward and exposes
+some of our implementation, we will instead support an alias ~agda~ which refers to ~ob-agda~.
+
+We can use the ~org-src-lang-modes~ variable to map any ---possibly more friendly or suggestive--- identifier to a language major mode.
+#+BEGIN_SRC emacs-lisp
+(add-to-list 'org-src-lang-modes '("agda" . ob-agda))
 #+END_SRC
 
 ** Keywords
@@ -88,7 +102,7 @@ syntax.
 We look at the ~agda2-highlight.el~ source file from the Agda repository
 for colours of keywords and reserved symbols such as ~=, ∀,~ etc.
 
-#+BEGIN_SRC emacs-lisp :tangle org-agda-mode.el
+#+BEGIN_SRC emacs-lisp
 (defface agda2-highlight-keyword-face
   '((t (:foreground "DarkOrange3")))
   "The face used for keywords."
@@ -105,15 +119,16 @@ for colours of keywords and reserved symbols such as ~=, ∀,~ etc.
 
 From Agda's [[https://agda.readthedocs.io/en/v2.5.4.1/language/lexical-structure.html?highlight=keywords][“read the docs”]] website, we obtain the keywords for the language:
 
-#+BEGIN_SRC emacs-lisp :tangle org-agda-mode.el
-(setq org-agda-keywords '("=" "|" "->" "→" ":" "?" "\\" "λ" "∀" ".." "..." "abstract" "codata"
-                          "coinductive" "constructor" "data" "do" "eta-equality" "field"
-                          "forall" "hiding" "import" "in" "inductive" "infix" "infixl"
-                          "infixr" "instance" "let" "macro" "module" "mutual" "no-eta-equality"
-                          "open" "overlap" "pattern" "postulate" "primitive" "private" "public"
-                          "quote" "quoteContext" "quoteGoal" "quoteTerm" "record" "renaming"
-                          "rewrite" "Set" "syntax" "tactic" "unquote" "unquoteDecl" "unquoteDef"
-                          "using" "where" "with"))
+#+BEGIN_SRC emacs-lisp
+(setq org-agda-keywords
+  '("=" "|" "->" "→" ":" "?" "\\" "λ" "∀" ".." "..." "abstract" "codata"
+  "coinductive" "constructor" "data" "do" "eta-equality" "field"
+  "forall" "hiding" "import" "in" "inductive" "infix" "infixl"
+  "infixr" "instance" "let" "macro" "module" "mutual" "no-eta-equality"
+  "open" "overlap" "pattern" "postulate" "primitive" "private" "public"
+  "quote" "quoteContext" "quoteGoal" "quoteTerm" "record" "renaming"
+  "rewrite" "Set" "syntax" "tactic" "unquote" "unquoteDecl" "unquoteDef"
+  "using" "where" "with"))
 #+END_SRC
 
 ** The ~generic-mode~ Definition
@@ -126,14 +141,19 @@ for determining whether a name is a type or not:
 /Parsing is Typechecking!/
 #+END_CENTER
 
-#+BEGIN_SRC emacs-lisp :tangle org-agda-mode.el
+#+BEGIN_SRC emacs-lisp
 (define-generic-mode
-    'org-agda-mode                      ;; name of the mode
+
+    'ob-agda-mode                      ;; name of the mode
+
     (list '("{-" . "-}"))               ;; comments delimiter
+
     org-agda-keywords
+
     ;; font lock list: Order of colouring matters;
     ;; the numbers refer to the subpart, or the whole(0), that should be coloured.
     (list
+
      ;; To begin with, after "module" or after "import" should be purple
      ;; Note the SPACE below.
      '("\\(module\\|import\\) \\([a-zA-Z0-9\-_\.]+\\)" 2 '((t (:foreground "purple"))))
@@ -150,16 +170,21 @@ for determining whether a name is a type or not:
      '("\\([a-z]+\\)\\([a-zA-Z0-9\-_]*\\)" 0 '((t (:foreground "medium blue"))))
 
      ;; colour numbers
-     '("\\([0-9]+\\)" 1   '((t (:foreground "purple")))) ;; 'font-lock-constant-face)
+     '("\\([0-9]+\\)" 1   '((t (:foreground "purple"))))
 
      ;; other faces to consider:
      ;; 'font-lock-keyword-face 'font-lock-builtin-face 'font-lock-function-name-face
-     ;;' font-lock-variable-name-face
+     ;; 'font-lock-variable-name-face 'font-lock-constant-face
      )
 
-     nil                                                   ;; files that trigger this mode
-     nil                                                   ;; any other functions to call
-    "My custom Agda highlighting mode for use *within* Org-mode."     ;; doc string
+     ;; files that trigger this mode
+     nil
+
+     ;; any other functions to call
+     nil
+
+     ;; doc string
+     "My custom Agda highlighting mode for use *within* Org-mode."
 )
 
 (provide 'org-agda-mode)
@@ -169,6 +194,56 @@ for determining whether a name is a type or not:
 #+END_SRC
 
 I do not insist that ~org-agda-mode~ be activated on any particular files by default.
+
+Here is an example code block that obtains this colouring schema.
+#+BEGIN_SRC org-agda
+module literate where
+
+data ℕ : Set where
+  Zero : ℕ
+  Succ : ℕ → ℕ
+
+double : ℕ → ℕ
+double Zero = Zero
+double (Succ n) = Succ (Succ (double n))
+
+{- lengthy
+      multiline
+        comment -}
+
+{- No one line comment colouring … Yet -}
+
+open import Data.Nat as Lib
+
+camelCaseIdentifier-01 : Lib.ℕ
+camelCaseIdentifier-01 = let it = 1234 in it
+#+END_SRC
+
+Next, we turn to supporting Agda interactivity with holes.
+* TODO Testing
+
+#+BEGIN_SRC agda
+module literate where
+
+data ℕ : Set where
+  Zero : ℕ
+  Succ : ℕ → ℕ
+
+double : ℕ → ℕ
+double Zero = Zero
+double (Succ n) = Succ (Succ (double n))
+
+{- lengthy
+      multiline
+        comment -}
+
+{- No one line comment colouring … Yet -}
+
+open import Data.Nat as Lib
+
+camelCaseIdentifier-01 : Lib.ℕ
+camelCaseIdentifier-01 = let it = 1234 in it
+#+END_SRC
 
 * (~lagda-to-org~) and (~org-to-lagda~)
 
@@ -309,32 +384,10 @@ Handy-dandy shortcuts, which are alternated on mode change:
 
 Here's some sample fragments, whose editing can be turned on with ~C-x C-a~.
 #+BEGIN_SRC org-agda
-module literate where
-
-data ℕ : Set where
-  Zero : ℕ
-  Succ : ℕ → ℕ
-
-double : ℕ → ℕ
-double Zero = Zero
-double (Succ n) = Succ (Succ (double n))
-
-{- lengthy
-      multiline
-        comment -}
-
-{- No one line comment colouring … Yet -}
-
-open import Data.Nat as Lib
-
-camelCaseIdentifier-01 : Lib.ℕ
-camelCaseIdentifier-01 = let it = 1234 in it
-
 postulate magic : Set
 
 hole : magic
 hole = {!!}
-
 #+END_SRC
 
 Here's a literate Agda ~spec~-ification environment, which corresponds to an Org-mode ~EXAMPLE~ block.
@@ -639,7 +692,7 @@ C-c C-c: evalute src block
 (with-temp-buffer
     (insert
     "#+EXPORT_FILE_NAME: README.md
-     #+HTML: <h1> org-agda-mode </h1>
+     #+HTML: <h1> org-agda </h1>
 
      An Emacs mode for working with
      Agda code in an Org-mode like fashion, more or less.
