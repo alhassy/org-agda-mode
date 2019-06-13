@@ -18,6 +18,8 @@
 # LaTeX_HEADER:   \usepackage{agda}
 # INCLUDE: ~/Dropbox/MyUnicodeSymbols.org
 
+*TODO:* require dash and s? document these dependencies.
+
 * Abstract       :ignore:
 #+BEGIN_CENTER
 *Abstract*
@@ -41,6 +43,7 @@ we can toggle into Agda-mode and use its interactive features to construct our p
 then return to an Org-mode literate programming style afterwards with
 another ~C-x C-a~
 ---/both translations remember the position we're working at and allow the editing features of their respective modes!/
+Moreover, we also allow user-defined colouring.
 
 ( Thanks to [[https://github.com/armkeh][Mark Armstrong]] for significant testing and contributions! )
 
@@ -142,6 +145,8 @@ for determining whether a name is a type or not:
 #+END_CENTER
 
 #+BEGIN_SRC emacs-lisp
+; (defvar org-agda-extra-word-colours nil "other words that user of org-mode wants coloured, along with their specified font-lock-type-face")
+
 (define-generic-mode
 
     'ob-agda-mode                      ;; name of the mode
@@ -152,6 +157,9 @@ for determining whether a name is a type or not:
 
     ;; font lock list: Order of colouring matters;
     ;; the numbers refer to the subpart, or the whole(0), that should be coloured.
+
+    (-concat  ;; ★★★★★★★★★★★★★★ org-agda-extra-word-colours is a free variable, user should define it /before/ loading org-agda-mode ★★★★★★★★★★★★★★
+               (if (boundp (quote org-agda-extra-word-colours)) org-agda-extra-word-colours nil)
     (list
 
      ;; To begin with, after "module" or after "import" should be purple
@@ -175,7 +183,7 @@ for determining whether a name is a type or not:
      ;; other faces to consider:
      ;; 'font-lock-keyword-face 'font-lock-builtin-face 'font-lock-function-name-face
      ;; 'font-lock-variable-name-face 'font-lock-constant-face
-     )
+     ))
 
      ;; files that trigger this mode
      nil
@@ -187,7 +195,7 @@ for determining whether a name is a type or not:
      "My custom Agda highlighting mode for use *within* Org-mode."
 )
 
-(provide 'org-agda-mode)
+(provide 'ob-agda-mode)
 
 ; (describe-symbol 'define-generic-mode)
 ; (describe-symbol 'font-lock-function-name-face)
@@ -220,30 +228,115 @@ camelCaseIdentifier-01 = let it = 1234 in it
 #+END_SRC
 
 Next, we turn to supporting Agda interactivity with holes.
-* TODO Testing
+** User-defined Colouring
 
-#+BEGIN_SRC agda
-module literate where
+Since true Agda colouring requires type-checking, it is desirable to allow the user to
+input colouring for their own identifiers. Such <<<user-defined colouring>>> will be
+via the delightful org-mode interface: A super simple intuitive table ♥‿♥
 
-data ℕ : Set where
-  Zero : ℕ
-  Succ : ℕ → ℕ
-
-double : ℕ → ℕ
-double Zero = Zero
-double (Succ n) = Succ (Succ (double n))
-
-{- lengthy
-      multiline
-        comment -}
-
-{- No one line comment colouring … Yet -}
-
-open import Data.Nat as Lib
-
-camelCaseIdentifier-01 : Lib.ℕ
-camelCaseIdentifier-01 = let it = 1234 in it
+Anywhere in their buffer, the user should have a table with a column for identifiers
+and the colours they should have, as follows.
+#+BEGIN_SRC org
+,#+RESULTS: ob-agda/colours
+| one   | keyword       |
+| two   | builtin       |
+| three | function-name |
+| four  | variable-name |
+| five  | constant      |
 #+END_SRC
+
+:Hide:
+#+RESULTS: ob-agda/colours
+| one    | keyword       |
+| twoish | builtin       |
+| three  | function-name |
+| four   | variable-name |
+| five   | constant      |
+:End:
+
+Which yields the following colouring,
+#+BEGIN_SRC agda
+one   = Set
+two   = Set
+three = Set
+four  = Set
+five  = Set
+#+END_SRC
+
+(load-file "literate.el")
+
+We implement this as follows. We produce a function that realises such colouring assignments:
+#+BEGIN_SRC emacs-lisp
+(defun ob-agda/add-colour (word colour)
+
+   "
+    Refresh the ob-agda-mode to have the new ‘colour’ for ‘word’ in agda blocks.
+
+    + ‘word’ is a string representing an Agda identifier.
+
+    + ‘colour’ is either a symbol from ‘keyword’, ‘builtin’, ‘function-name’,
+       ‘variable-name’, ‘constant’.
+   "
+
+   ;; We only declare org-agda-extra-word-colours if the user needs it.
+   ;; If we declare it in the file, as nil, then it will always be nil before
+   ;; the ob-agda-mode is defined and so later changes to this variable will not take effect.
+   ;;
+   (unless (boundp (quote org-agda-extra-word-colours)) (setq org-agda-extra-word-colours nil))
+
+   ;; Discard existing colour-scheme.
+   (unload-feature 'ob-agda-mode)
+
+   ;; Add new colour
+   (if (-contains? '(keyword builtin function-name variable-name constant) colour)
+
+        (add-to-list 'org-agda-extra-word-colours
+           `(,word 0 ,(intern (concat "font-lock-" (symbol-name colour) "-face"))))
+
+        (message-box "colour %s" colour)
+        (add-to-list 'org-agda-extra-word-colours
+           `(,word 0 ,colour))
+   )
+
+   ;; Load the new altered scheme.
+   (require 'ob-agda-mode "~/org-agda-mode/literate.el")
+
+)
+#+END_SRC
+:ExampleInovcations:
+#+BEGIN_SRC emacs-lisp :tangle no
+(add-to-list 'org-agda-extra-word-colours '("typeclass" 0 'agda2-highlight-keyword-face))
+(add-to-list 'org-agda-extra-word-colours '("PackageFormer" 0 'font-lock-type-face))
+(add-to-list 'org-agda-extra-word-colours '("_⨾_" 0 'font-lock-type-face))
+(add-to-list 'org-agda-extra-word-colours '("assoc" 0 'font-lock-type-face))
+
+; (ob-agda/add-colour "newkeyword" 'agda2-highlight-keyword-face)
+(ob-agda/add-colour "newkeyword" 'builtin)
+(ob-agda/add-colour "newkeyword" 'constant)
+(ob-agda/add-colour "newkeyword" 'function-name)
+#+END_SRC
+:End:
+
+Then lookup that user provided table, if it is there, and use it.
+#+BEGIN_SRC emacs-lisp
+(defun ob-agda/update-colours ()
+ "Searchs current buffer for an ob-agda/colours named result table
+  then uses that to update the colour scheme.
+ "
+ (interactive)
+(ignore-errors
+(save-excursion
+  (org-babel-goto-named-result "ob-agda/colours")
+  (forward-line)
+  ; (setq _it (org-table-to-lisp))
+  (dolist (elem (org-table-to-lisp) org-agda-extra-word-colours)
+    (ob-agda/add-colour (car elem) (intern (cadr elem))))
+))
+)
+#+END_SRC
+
+#+RESULTS:
+: ob-agda/update-colours
 
 * (~lagda-to-org~) and (~org-to-lagda~)
 
@@ -438,6 +531,10 @@ in this document.
 # *TODO* Method to turn an begin{spec} into a begin{code}
 # Maybe this exists for Org-blocks: SRC ↔ EXAMPLE?
 # Maybe this exists for agda2-mode?
+
+
+Allow colour to be  a face such as the symbol
+‘agda2-highlight-keyword-face’
 
 
 # Note that remembering-position in `rewrite-ends` does not work as expected

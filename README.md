@@ -1,4 +1,4 @@
-<h1> org-agda-mode </h1>
+<h1> org-agda </h1>
 
 An Emacs mode for working with
 Agda code in an Org-mode like fashion, more or less.
@@ -8,14 +8,17 @@ The following can also be read as a [blog post](https://alhassy.github.io/litera
 
 # Table of Contents
 
-1.  [“Agda now supports org files” &#x2014;Not Really](#org2499b01)
-2.  [Agda Syntax Highlighting With `org-agda-mode`](#org8b7b46a)
-    1.  [Keywords](#orgc211307)
-    2.  [The `generic-mode` Definition](#org7d50d1e)
-3.  [(`lagda-to-org`) and (`org-to-lagda`)](#org1b7263a)
-4.  [Example](#orgfff6708)
-5.  [Summary](#org041989a)
-6.  [Sources Consulted](#org55d9c6c)
+1.  [“Agda now supports org files” &#x2014;Not Really](#orge0028ed)
+2.  [Agda Syntax Highlighting](#org6e7e25f)
+    1.  [Keywords](#orgbc189d9)
+    2.  [The `generic-mode` Definition](#orgd975c1e)
+    3.  [User-defined Colouring](#org76a9760)
+3.  [(`lagda-to-org`) and (`org-to-lagda`)](#org9f9594f)
+4.  [Example](#orgfc76e4a)
+5.  [Summary](#org2c2cd30)
+6.  [Sources Consulted](#org75a5a73)
+
+**TODO:** require dash and s? document these dependencies.
 
 <div class="org-center">
 **Abstract**
@@ -39,6 +42,7 @@ we can toggle into Agda-mode and use its interactive features to construct our p
 then return to an Org-mode literate programming style afterwards with
 another `C-x C-a`
 ---*both translations remember the position we're working at and allow the editing features of their respective modes!*
+Moreover, we also allow user-defined colouring.
 
 ( Thanks to [Mark Armstrong](https://github.com/armkeh) for significant testing and contributions! )
 
@@ -51,7 +55,7 @@ another `C-x C-a`
 -->
 
 
-<a id="org2499b01"></a>
+<a id="orge0028ed"></a>
 
 # “Agda now supports org files” &#x2014;Not Really
 
@@ -78,19 +82,28 @@ Besides the core capability to switch between the different modes, we also provi
 an elementary yet *extensible* syntax colouring mechanism for Agda's non-standard highlighting.
 
 
-<a id="org8b7b46a"></a>
+<a id="org6e7e25f"></a>
 
-# Agda Syntax Highlighting With `org-agda-mode`
+# Agda Syntax Highlighting
 
-We produce a new mode in a file named `org-agda-mode.el`
-so that Org-mode blocks marked with `org-agda` will have Agda *approximated*
-syntax.
+We produce a new mode, calling it `ob-agda-mode`,
+so that Org-mode blocks marked with `ob-agda` will have Agda *approximated*
+syntax. By default, if an Emacs major-mode `<lang>-mode` exists,
+then blocks marked with `<lang>` use that major-mode for editing.
 
     ;; To use generic-mode later below.
     (require 'generic-x)
 
+The “ob” is short for “org-babel” since we also wish to provide
+Babel support for Agda. Using `ob-agda` marked blocks is awkward and exposes
+some of our implementation, we will instead support an alias `agda` which refers to `ob-agda`.
 
-<a id="orgc211307"></a>
+We can use the `org-src-lang-modes` variable to map any &#x2014;possibly more friendly or suggestive&#x2014; identifier to a language major mode.
+
+    (add-to-list 'org-src-lang-modes '("agda" . ob-agda))
+
+
+<a id="orgbc189d9"></a>
 
 ## Keywords
 
@@ -112,17 +125,18 @@ for colours of keywords and reserved symbols such as `=, ∀,` etc.
 
 From Agda's [“read the docs”](https://agda.readthedocs.io/en/v2.5.4.1/language/lexical-structure.html?highlight=keywords) website, we obtain the keywords for the language:
 
-    (setq org-agda-keywords '("=" "|" "->" "→" ":" "?" "\\" "λ" "∀" ".." "..." "abstract" "codata"
-			      "coinductive" "constructor" "data" "do" "eta-equality" "field"
-			      "forall" "hiding" "import" "in" "inductive" "infix" "infixl"
-			      "infixr" "instance" "let" "macro" "module" "mutual" "no-eta-equality"
-			      "open" "overlap" "pattern" "postulate" "primitive" "private" "public"
-			      "quote" "quoteContext" "quoteGoal" "quoteTerm" "record" "renaming"
-			      "rewrite" "Set" "syntax" "tactic" "unquote" "unquoteDecl" "unquoteDef"
-			      "using" "where" "with"))
+    (setq org-agda-keywords
+      '("=" "|" "->" "→" ":" "?" "\\" "λ" "∀" ".." "..." "abstract" "codata"
+      "coinductive" "constructor" "data" "do" "eta-equality" "field"
+      "forall" "hiding" "import" "in" "inductive" "infix" "infixl"
+      "infixr" "instance" "let" "macro" "module" "mutual" "no-eta-equality"
+      "open" "overlap" "pattern" "postulate" "primitive" "private" "public"
+      "quote" "quoteContext" "quoteGoal" "quoteTerm" "record" "renaming"
+      "rewrite" "Set" "syntax" "tactic" "unquote" "unquoteDecl" "unquoteDef"
+      "using" "where" "with"))
 
 
-<a id="org7d50d1e"></a>
+<a id="orgd975c1e"></a>
 
 ## The `generic-mode` Definition
 
@@ -135,9 +149,11 @@ for determining whether a name is a type or not:
 *Parsing is Typechecking!*
 </div>
 
+    ; (defvar org-agda-extra-word-colours nil "other words that user of org-mode wants coloured, along with their specified font-lock-type-face")
+
     (define-generic-mode
 
-	'org-agda-mode                      ;; name of the mode
+	'ob-agda-mode                      ;; name of the mode
 
 	(list '("{-" . "-}"))               ;; comments delimiter
 
@@ -145,6 +161,9 @@ for determining whether a name is a type or not:
 
 	;; font lock list: Order of colouring matters;
 	;; the numbers refer to the subpart, or the whole(0), that should be coloured.
+
+	(-concat  ;; ★★★★★★★★★★★★★★ org-agda-extra-word-colours is a free variable, user should define it /before/ loading org-agda-mode ★★★★★★★★★★★★★★
+		   (if (boundp (quote org-agda-extra-word-colours)) org-agda-extra-word-colours nil)
 	(list
 
 	 ;; To begin with, after "module" or after "import" should be purple
@@ -168,14 +187,19 @@ for determining whether a name is a type or not:
 	 ;; other faces to consider:
 	 ;; 'font-lock-keyword-face 'font-lock-builtin-face 'font-lock-function-name-face
 	 ;; 'font-lock-variable-name-face 'font-lock-constant-face
-	 )
+	 ))
 
-	 nil                                                   ;; files that trigger this mode
-	 nil                                                   ;; any other functions to call
-	"My custom Agda highlighting mode for use *within* Org-mode."     ;; doc string
+	 ;; files that trigger this mode
+	 nil
+
+	 ;; any other functions to call
+	 nil
+
+	 ;; doc string
+	 "My custom Agda highlighting mode for use *within* Org-mode."
     )
 
-    (provide 'org-agda-mode)
+    (provide 'ob-agda-mode)
 
     ; (describe-symbol 'define-generic-mode)
     ; (describe-symbol 'font-lock-function-name-face)
@@ -208,7 +232,143 @@ Here is an example code block that obtains this colouring schema.
 Next, we turn to supporting Agda interactivity with holes.
 
 
-<a id="org1b7263a"></a>
+<a id="org76a9760"></a>
+
+## User-defined Colouring
+
+Since true Agda colouring requires type-checking, it is desirable to allow the user to
+input colouring for their own identifiers. Such <a id="orgbdb5542">user-defined colouring</a> will be
+via the delightful org-mode interface: A super simple intuitive table ♥‿♥
+
+Anywhere in their buffer, the user should have a table with a column for identifiers
+and the colours they should have, as follows.
+
+    #+RESULTS: ob-agda/colours
+    | one   | keyword       |
+    | two   | builtin       |
+    | three | function-name |
+    | four  | variable-name |
+    | five  | constant      |
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<tbody>
+<tr>
+<td class="org-left">one</td>
+<td class="org-left">keyword</td>
+</tr>
+
+
+<tr>
+<td class="org-left">twoish</td>
+<td class="org-left">builtin</td>
+</tr>
+
+
+<tr>
+<td class="org-left">three</td>
+<td class="org-left">function-name</td>
+</tr>
+
+
+<tr>
+<td class="org-left">four</td>
+<td class="org-left">variable-name</td>
+</tr>
+
+
+<tr>
+<td class="org-left">five</td>
+<td class="org-left">constant</td>
+</tr>
+</tbody>
+</table>
+
+Which yields the following colouring,
+
+    one   = Set
+    two   = Set
+    three = Set
+    four  = Set
+    five  = Set
+
+(load-file "literate.el")
+
+We implement this as follows. We produce a function that realises such colouring assignments:
+
+    (defun ob-agda/add-colour (word colour)
+
+       "
+	Refresh the ob-agda-mode to have the new ‘colour’ for ‘word’ in agda blocks.
+
+	+ ‘word’ is a string representing an Agda identifier.
+
+	+ ‘colour’ is either a symbol from ‘keyword’, ‘builtin’, ‘function-name’,
+	   ‘variable-name’, ‘constant’.
+       "
+
+       ;; We only declare org-agda-extra-word-colours if the user needs it.
+       ;; If we declare it in the file, as nil, then it will always be nil before
+       ;; the ob-agda-mode is defined and so later changes to this variable will not take effect.
+       ;;
+       (unless (boundp (quote org-agda-extra-word-colours)) (setq org-agda-extra-word-colours nil))
+
+       ;; Discard existing colour-scheme.
+       (unload-feature 'ob-agda-mode)
+
+       ;; Add new colour
+       (if (-contains? '(keyword builtin function-name variable-name constant) colour)
+
+	    (add-to-list 'org-agda-extra-word-colours
+	       `(,word 0 ,(intern (concat "font-lock-" (symbol-name colour) "-face"))))
+
+	    (message-box "colour %s" colour)
+	    (add-to-list 'org-agda-extra-word-colours
+	       `(,word 0 ,colour))
+       )
+
+       ;; Load the new altered scheme.
+       (require 'ob-agda-mode "~/org-agda-mode/literate.el")
+
+    )
+
+    (add-to-list 'org-agda-extra-word-colours '("typeclass" 0 'agda2-highlight-keyword-face))
+    (add-to-list 'org-agda-extra-word-colours '("PackageFormer" 0 'font-lock-type-face))
+    (add-to-list 'org-agda-extra-word-colours '("_⨾_" 0 'font-lock-type-face))
+    (add-to-list 'org-agda-extra-word-colours '("assoc" 0 'font-lock-type-face))
+
+    ; (ob-agda/add-colour "newkeyword" 'agda2-highlight-keyword-face)
+    (ob-agda/add-colour "newkeyword" 'builtin)
+    (ob-agda/add-colour "newkeyword" 'constant)
+    (ob-agda/add-colour "newkeyword" 'function-name)
+
+Then lookup that user provided table, if it is there, and use it.
+
+    (defun ob-agda/update-colours ()
+     "Searchs current buffer for an ob-agda/colours named result table
+      then uses that to update the colour scheme.
+     "
+     (interactive)
+    (ignore-errors
+    (save-excursion
+      (org-babel-goto-named-result "ob-agda/colours")
+      (forward-line)
+      ; (setq _it (org-table-to-lisp))
+      (dolist (elem (org-table-to-lisp) org-agda-extra-word-colours)
+	(ob-agda/add-colour (car elem) (intern (cadr elem))))
+    ))
+    )
+
+    ob-agda/update-colours
+
+
+<a id="org9f9594f"></a>
 
 # (`lagda-to-org`) and (`org-to-lagda`)
 
@@ -329,7 +489,7 @@ Handy-dandy shortcuts, which are alternated on mode change:
 	      (lambda () (local-set-key (kbd "C-x C-a") 'lagda-to-org)))
 
 
-<a id="orgfff6708"></a>
+<a id="orgfc76e4a"></a>
 
 # Example
 
@@ -355,7 +515,7 @@ Here's a literate Agda `spec`-ification environment, which corresponds to an Org
       maximum-specfication c = ?
 
 
-<a id="org041989a"></a>
+<a id="org2c2cd30"></a>
 
 # Summary
 
@@ -395,7 +555,7 @@ Hopefully I can make use of this, in the small, if not in the large
 in this document.
 
 
-<a id="org55d9c6c"></a>
+<a id="org75a5a73"></a>
 
 # Sources Consulted
 

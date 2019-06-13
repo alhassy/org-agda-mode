@@ -28,6 +28,8 @@
   "rewrite" "Set" "syntax" "tactic" "unquote" "unquoteDecl" "unquoteDef"
   "using" "where" "with"))
 
+; (defvar org-agda-extra-word-colours nil "other words that user of org-mode wants coloured, along with their specified font-lock-type-face")
+
 (define-generic-mode
 
     'ob-agda-mode                      ;; name of the mode
@@ -38,6 +40,9 @@
 
     ;; font lock list: Order of colouring matters;
     ;; the numbers refer to the subpart, or the whole(0), that should be coloured.
+
+    (-concat  ;; ★★★★★★★★★★★★★★ org-agda-extra-word-colours is a free variable, user should define it /before/ loading org-agda-mode ★★★★★★★★★★★★★★
+	       (if (boundp (quote org-agda-extra-word-colours)) org-agda-extra-word-colours nil)
     (list
 
      ;; To begin with, after "module" or after "import" should be purple
@@ -61,7 +66,7 @@
      ;; other faces to consider:
      ;; 'font-lock-keyword-face 'font-lock-builtin-face 'font-lock-function-name-face
      ;; 'font-lock-variable-name-face 'font-lock-constant-face
-     )
+     ))
 
      ;; files that trigger this mode
      nil
@@ -73,10 +78,7 @@
      "My custom Agda highlighting mode for use *within* Org-mode."
 )
 
-(provide 'org-agda-mode)
-
-; (describe-symbol 'define-generic-mode)
-; (describe-symbol 'font-lock-function-name-face)
+(provide 'ob-agda-mode)
 
 (defun org-goto-line (line)
   "Go to the indicated line, unfolding the parent Org header.
@@ -102,11 +104,11 @@
   In the arguments, only symbol `\` needs to be escaped.
   "
   (let ((rx-pre  (concat "\\(" (regexp-quote pre)  "\\)"))
-        (rx-post (concat "\\(" (regexp-quote post) "\\)"))
-        ;; Code to match any characters (including newlines) based on https://www.emacswiki.org/emacs/MultilineRegexp
-        ;; This version requires we end in a newline,
-        ;; and uses the “non-greedy” * operator, *?, so we will match the minimal string.
-        (body "\\(.*\n\\)*?"))
+	(rx-post (concat "\\(" (regexp-quote post) "\\)"))
+	;; Code to match any characters (including newlines) based on https://www.emacswiki.org/emacs/MultilineRegexp
+	;; This version requires we end in a newline,
+	;; and uses the “non-greedy” * operator, *?, so we will match the minimal string.
+	(body "\\(.*\n\\)*?"))
     (beginning-of-buffer)
     (while (re-search-forward (concat rx-pre body rx-post) nil t) ;; nil to search whole buffer, t to not error
       ;; Matched string 1 is the pre, matched string 3 is the post.
@@ -123,13 +125,13 @@
   "
   (interactive)
   (let ((here-line (line-number-at-pos)) ;; remember current line
-        (here-column (current-column))
-        (enable-local-variables :safe)
-        )
+	(here-column (current-column))
+	(enable-local-variables :safe)
+	)
     (rewrite-ends "\n\\begin{code}"              "\n\\end{code}"
-                  "\n#+BEGIN_SRC org-agda"       "\n#+END_SRC")
+		  "\n#+BEGIN_SRC org-agda"       "\n#+END_SRC")
     (rewrite-ends "\n\\begin{spec}"              "\n\\end{spec}"
-                  "\n#+BEGIN_EXAMPLE org-agda"   "\n#+END_EXAMPLE")
+		  "\n#+BEGIN_EXAMPLE org-agda"   "\n#+END_EXAMPLE")
     (org-mode)
     (org-goto-line here-line) ;; defined above
     (move-to-column here-column)
@@ -143,13 +145,13 @@
   "
   (interactive)
   (let ((here-line (line-number-at-pos)) ;; remember current line
-        (here-column (current-column))  ;; and current column
-        (enable-local-variables :safe))
+	(here-column (current-column))  ;; and current column
+	(enable-local-variables :safe))
 
     (rewrite-ends "\n#+BEGIN_SRC org-agda"       "\n#+END_SRC"
-                  "\n\\begin{code}"              "\n\\end{code}")
+		  "\n\\begin{code}"              "\n\\end{code}")
     (rewrite-ends "\n#+BEGIN_EXAMPLE org-agda"   "\n#+END_EXAMPLE"
-                  "\n\\begin{spec}"              "\n\\end{spec}")
+		  "\n\\begin{spec}"              "\n\\end{spec}")
     (agda2-mode)
     (sit-for 0.1) ;; necessary for the slight delay between the agda2 commands
     (agda2-load)
@@ -160,7 +162,7 @@
 )
 
 (add-hook 'org-mode-hook
-          (lambda () (local-set-key (kbd "C-x C-a") 'org-to-lagda)))
+	  (lambda () (local-set-key (kbd "C-x C-a") 'org-to-lagda)))
 
 (add-hook 'agda2-mode-hook
-          (lambda () (local-set-key (kbd "C-x C-a") 'lagda-to-org)))
+	  (lambda () (local-set-key (kbd "C-x C-a") 'lagda-to-org)))
