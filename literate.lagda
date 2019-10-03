@@ -59,14 +59,11 @@ Jump to [[#installation]] to quickly get and use the setup.
 
 ( Thanks to [[https://github.com/armkeh][Mark Armstrong]] for significant testing and contributions! )
 
-#+HTML: <!--
-#+BEGIN_SRC emacs-lisp
-;; This file is generated from literate.lagda.
-#+END_SRC
+:Hide:
 #+BEGIN_SRC emacs-lisp :tangle org-agda-mode.el
 ;; This file is generated from literate.lagda.
 #+END_SRC
-#+HTML: -->
+:End:
 
 * Contents :TOC:QUOTE:ignore:
 #+BEGIN_QUOTE

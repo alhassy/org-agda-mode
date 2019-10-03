@@ -1,4 +1,4 @@
-# Created 2019-10-03 Thu 07:57
+# Created 2019-10-03 Thu 08:21
 #+OPTIONS: toc:nil d:nil
 #+OPTIONS: html-postamble:nil toc:nil d:nil
 #+TITLE: Literate Agda with Org-mode
@@ -49,15 +49,6 @@ Moreover, we also allow user-defined colouring.
 Jump to [[#installation]] to quickly get and use the setup.
 
 ( Thanks to [[https://github.com/armkeh][Mark Armstrong]] for significant testing and contributions! )
-
-#+html: <!--
-#+begin_src emacs-lisp
-;; This file is generated from literate.lagda.
-#+end_src
-#+begin_src emacs-lisp :tangle org-agda-mode.el
-;; This file is generated from literate.lagda.
-#+end_src
-#+html: -->
 
 #+begin_quote
 - [[#abstract][Abstract]]
