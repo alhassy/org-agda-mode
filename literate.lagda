@@ -94,7 +94,7 @@ comes with discouraging compromises between the Org- and Agda-modes. Namely:
 2. The full editorial capabilities of Org-mode are limited since some
    features clash with those of Agda-mode.
 
-The solution outline here is not to limit or compromise each role, but rather
+The solution outlined here is not to limit nor compromise each role, but rather
 provide both and instead allow the user, you, to control when you would like
 to be /documenting vs. developing/ ---the resulting system is sufficiently fast
 to toggle between the modes; e.g., the somewhat large categorical development
@@ -127,7 +127,7 @@ We can use the ~org-src-lang-modes~ variable to map any ---possibly more friendl
 ** Keywords
 
 We look at the ~agda2-highlight.el~ source file from the Agda repository
-for colours of keywords and reserved symbols such as ~=, ∀,~ etc.
+for colours of keywords and reserved symbols such as ==, λ, ∀=, etc.
 
 #+BEGIN_SRC emacs-lisp
 (defface agda2-highlight-keyword-face
@@ -169,7 +169,8 @@ for determining whether a name is a type or not:
 #+END_CENTER
 
 #+BEGIN_SRC emacs-lisp
-; (defvar org-agda-extra-word-colours nil "other words that user of org-mode wants coloured, along with their specified font-lock-type-face")
+; (defvar org-agda-extra-word-colours nil
+; "other words that user of org-mode wants coloured, along with their specified font-lock-type-face")
 
 ;; When exporting to .lagda files, I overwrite these to "".
 (defvar ob-agda-comment-start "{-")
@@ -186,7 +187,8 @@ for determining whether a name is a type or not:
     ;; font lock list: Order of colouring matters;
     ;; the numbers refer to the subpart, or the whole(0), that should be coloured.
 
-    (-concat  ;; ★★★★★★★★★★★★★★ org-agda-extra-word-colours is a free variable, user should define it /before/ loading org-agda-mode ★★★★★★★★★★★★★★
+    (-concat  ;; ★★★ org-agda-extra-word-colours is a free variable,      ★★★
+              ;; ★★★ user should define it /before/ loading org-agda-mode ★★★
                (if (boundp (quote org-agda-extra-word-colours)) org-agda-extra-word-colours nil)
     (list
 
@@ -222,20 +224,7 @@ for determining whether a name is a type or not:
      ;; doc string
      "My custom Agda highlighting mode for use *within* Org-mode."
 )
-
-;; (provide 'ob-agda-mode)
-
-; (describe-symbol 'define-generic-mode)
-; (describe-symbol 'font-lock-function-name-face)
 #+END_SRC
-
-Let's use ~agda~ as a language marker in Org-src blocks in-place of ~ob-agda~.
-#+BEGIN_SRC emacs-lisp
-(add-to-list 'org-src-lang-modes '("agda" . ob-agda))
-#+END_SRC
-
-#+RESULTS:
-: ob-agda-mode
 
 I do not insist that ~org-agda-mode~ be activated on any particular files by default.
 
@@ -270,6 +259,12 @@ Since true Agda colouring requires type-checking, it is desirable to allow the u
 input colouring for their own identifiers. Such <<<user-defined colouring>>> will be
 via the delightful org-mode interface: A super simple intuitive table ♥‿♥
 
+#+begin_quote org
+For now, the user-defined Agda colouring mentioned here only serves for an enjoyable
+literate programming experience. It currently is not picked up by the Org-mode LaTeX backend
+nor the HTML backend.
+#+end_quote
+
 Anywhere in their buffer, the user should have a table with a column for identifiers
 and the colours they should have, as follows.
 #+BEGIN_SRC org
@@ -302,16 +297,12 @@ five  = Set
 We implement this as follows. We produce a function that realises such colouring assignments:
 #+BEGIN_SRC emacs-lisp
 (defun ob-agda/add-colour (word colour)
-
-   "
-    Refresh the ob-agda-mode to have the new ‘colour’ for ‘word’ in agda blocks.
+   "Refresh the ob-agda-mode to have the new ‘colour’ for ‘word’ in agda blocks.
 
     + ‘word’ is a string representing an Agda identifier.
 
     + ‘colour’ is either a symbol from ‘keyword’, ‘builtin’, ‘function-name’,
-       ‘variable-name’, ‘constant’.
-   "
-
+       ‘variable-name’, ‘constant’."
    ;; We only declare org-agda-extra-word-colours if the user needs it.
    ;; If we declare it in the file, as nil, then it will always be nil before
    ;; the ob-agda-mode is defined and so later changes to this variable will not take effect.
@@ -323,19 +314,14 @@ We implement this as follows. We produce a function that realises such colouring
 
    ;; Add new colour
    (if (-contains? '(keyword builtin function-name variable-name constant) colour)
-
-        (add-to-list 'org-agda-extra-word-colours
-           `(,word 0 ,(intern (concat "font-lock-" (symbol-name colour) "-face"))))
-
-        (message-box "colour %s" colour)
-        (add-to-list 'org-agda-extra-word-colours
-           `(,word 0 ,colour))
-   )
+       (add-to-list 'org-agda-extra-word-colours
+                    `(,word 0 ,(intern (concat "font-lock-" (symbol-name colour) "-face"))))
+     (message-box "colour %s" colour)
+     (add-to-list 'org-agda-extra-word-colours
+                  `(,word 0 ,colour)))
 
    ;; Load the new altered scheme.
-   (require 'ob-agda-mode "~/org-agda-mode/literate.el")
-
-)
+   (require 'ob-agda-mode "~/.emacs.d/literate.el"))
 #+END_SRC
 :ExampleInovcations:
 #+BEGIN_SRC emacs-lisp :tangle no
@@ -358,19 +344,14 @@ Then lookup that user provided table, if it is there, and use it.
   then uses that to update the colour scheme.
  "
  (interactive)
-(ignore-errors
-(save-excursion
-  (org-babel-goto-named-result "ob-agda/colours")
-  (forward-line)
-  ; (setq _it (org-table-to-lisp))
-  (dolist (elem (org-table-to-lisp) org-agda-extra-word-colours)
-    (ob-agda/add-colour (car elem) (intern (cadr elem))))
-))
-)
+ (ignore-errors
+   (save-excursion
+     (org-babel-goto-named-result "ob-agda/colours")
+     (forward-line)
+     ;; (setq _it (org-table-to-lisp))
+     (dolist (elem (org-table-to-lisp) org-agda-extra-word-colours)
+       (ob-agda/add-colour (car elem) (intern (cadr elem)))))))
 #+END_SRC
-
-#+RESULTS:
-: ob-agda/update-colours
 
 * (~lagda-to-org~) and (~org-to-lagda~)
 
@@ -394,13 +375,11 @@ but unfolds the document to show that line.
 
    Implementation: Go to the line, then look at the 1st previous
    org header, now we can unfold it whence we do so, then we go
-   back to the line we want to be at.
-  "
+   back to the line we want to be at."
   (goto-line line)
   (org-back-to-heading 1)
   (org-cycle)
-  (goto-line line)
-  )
+  (goto-line line))
 #+END_SRC
 # MA: Warning, goto-line is different than forward-line!
 
@@ -420,11 +399,11 @@ literate Agda, as well as their closing partners.
   We insist that the ends occur at the start of a newline; otherwise no
   rewrite is made. Note the “^” regexp marker below.
 
-  In the arguments, only symbol `\` needs to be escaped.
-  "
+  In the arguments, only symbol `\` needs to be escaped."
   (let ((rx-pre  (concat "\\(^" (regexp-quote pre)  "\\)"))
         (rx-post (concat "\\(^" (regexp-quote post) "\\)"))
-        ;; Code to match any characters (including newlines) based on https://www.emacswiki.org/emacs/MultilineRegexp
+        ;; Code to match any characters (including newlines)
+        ;; based on https://www.emacswiki.org/emacs/MultilineRegexp
         ;; This version requires we end in a newline,
         ;; and uses the “non-greedy” * operator, *?, so we will match the minimal string.
         (body "\\(.*\n\\)*?"))
@@ -433,60 +412,46 @@ literate Agda, as well as their closing partners.
       ;; Matched string 1 is the pre, matched string 3 is the post.
       ;; Optionals: fixed-case, literal, use buffer, substring
       (replace-match new-pre  t t nil 1)
-      (replace-match new-post t t nil 3)
-      )
-    )
-  )
+      (replace-match new-post t t nil 3))))
 #+END_SRC
 
 The two rewriting utilities:
-
 #+BEGIN_SRC emacs-lisp :tangle literate.el :comments link
 (defun lagda-to-org ()
   "Transform literate Agda blocks into Org-mode source blocks.
-   Use haskell as the Org source block language since I do not have nice colouring otherwise.
-  "
+   Use haskell as the Org source block language since I do not have nice colouring otherwise."
   (interactive)
   (let ((here-line (line-number-at-pos)) ;; remember current line
         (here-column (current-column))
-        (enable-local-variables :safe)
-        )
-    (rewrite-ends "\\begin{code}"              "\\end{code}"
+        (enable-local-variables :safe))
+    (rewrite-ends "\\begin{code}"          "\\end{code}"
                   "#+BEGIN_SRC agda"       "#+END_SRC")
-    (rewrite-ends "\\begin{spec}"              "\\end{spec}"
+    (rewrite-ends "\\begin{spec}"          "\\end{spec}"
                   "#+BEGIN_EXAMPLE agda"   "#+END_EXAMPLE")
     (org-mode)
     (org-goto-line here-line) ;; defined above
-    (move-to-column here-column)
-  )
-  (message "Welcome to Org-mode, %s!" user-full-name)
-)
+    (move-to-column here-column))
+  (message "Welcome to Org-mode, %s!" user-full-name))
 
 (defun org-to-lagda ()
   "Transform Org-mode source blocks into literate Agda blocks.
-   Use haskell as the Org source block language since I do not have nice colouring otherwise.
-  "
+   Use haskell as the Org source block language since I do not have nice colouring otherwise."
   (interactive)
   (let ((here-line (line-number-at-pos)) ;; remember current line
         (here-column (current-column))  ;; and current column
         (enable-local-variables :safe))
 
     (rewrite-ends "#+BEGIN_SRC agda"       "#+END_SRC"
-                  "\\begin{code}"              "\\end{code}")
+                  "\\begin{code}"          "\\end{code}")
     (rewrite-ends "#+BEGIN_EXAMPLE agda"   "#+END_EXAMPLE"
-                  "\\begin{spec}"              "\\end{spec}")
+                  "\\begin{spec}"          "\\end{spec}")
     (agda2-mode)
     (sit-for 0.1) ;; necessary for the slight delay between the agda2 commands
     (agda2-load)
     (goto-line here-line)
-    (move-to-column here-column)
-  )
-   (message "Welcome to Agda-mode, %s!" user-full-name)
-)
+    (move-to-column here-column))
+  (message "Welcome to Agda-mode, %s!" user-full-name))
 #+END_SRC
-
-#+RESULTS:
-: org-to-lagda
 
 *Notice!* The toggling utilities automatically enable all /safe/ local variables
 in an file ---c.f., the ~(enable-local-variables :all)~ lines above.
@@ -512,33 +477,6 @@ Handy-dandy shortcuts, which are alternated on mode change:
 
 Org-mode, by default, lets us create a source block using ~C-c C-v C-d~, so we bring
 this incantation to Agda-mode as well as having ~C-u C-c C-v C-d~ produce a ~spec~-environment.
-
-* Example Fragments
-
-# Useful for debugging.
-#
-:Hide:
-#+BEGIN_EXAMPLE emacs-lisp
-(unload-feature 'org-agda-mode)
-(load-file "org-agda-mode.el")
-#+END_EXAMPLE
-:End:
-
-Here's some sample fragments, whose editing can be turned on with ~C-x C-a~.
-#+BEGIN_SRC org-agda
-postulate magic : Set
-
-hole : magic
-hole = {!!}
-#+END_SRC
-
-Here's a literate Agda ~spec~-ification environment, which corresponds to an Org-mode ~EXAMPLE~ block.
-#+BEGIN_EXAMPLE org-agda
-module this-is-a-spec {A : Set} (_≤_ : A → A → Set) where
-
-  maximum-specfication : (candidate : A) → Set
-  maximum-specfication c = ?
-#+END_EXAMPLE
 
 * Summary
 
@@ -572,7 +510,7 @@ in this document.
 
 :End:
 
-Add the following to the top of your Emacs configuration file, i.e., the ~~/.emacs~ file.
+ 1. Add the following to the top of your Emacs configuration file, i.e., the =/.emacs= file.
     #+BEGIN_SRC emacs-lisp
 (progn
 
@@ -611,35 +549,51 @@ Add the following to the top of your Emacs configuration file, i.e., the ~~/.ema
 #+END_SRC
 
  2. Make a new ~test.lagda~ file.
-  #+BEGIN_SRC org :tangle test.lagda
+    #+BEGIN_SRC org :tangle test.lagda
 # -*- org -*-
 #
 # (load-file "~/.emacs.d/literate.el")
+
+Here's some sample fragments, whose editing can be turned on with ~C-x C-a~.
 
 ,* Example src
 
 Press C-c C-v C-d to make src code blocks.
 
-words
+hello
 \begin{code}
 module test where
+
+hole : Set₁
+hole = {!!}
 \end{code}
-more
+there
 
 ,* Example spec
 
-In Agda mode, press C-u C-c C-v C-d to make spec blocks.
+A literate Agda ~spec~-ification environment, which corresponds to an Org-mode ~EXAMPLE~ block.
 
-then
+my
 \begin{spec}
 e : τ
 \end{spec}
-bye
+friends
+
+In Agda mode, press C-u C-c C-v C-d to make spec blocks.
 #+END_SRC
 
- 4. Load the ~literate.el~ file.
+    # Useful for debugging.
+    #
+    :Hide:
+    #+BEGIN_EXAMPLE emacs-lisp
+    (unload-feature 'org-agda-mode)
+    (load-file "org-agda-mode.el")
+    #+END_EXAMPLE
+    :End:
 
- 3. Now ~C-x C-a~ to switch to Agda mode and load the module.
+ 3. Load the ~literate.el~ file.
+
+ 4. Now ~C-x C-a~ to switch to Agda mode and load the module.
 
 * Sources Consulted
 
@@ -928,6 +882,11 @@ Evaluate the following source block with ~C-c C-c~ to produce a ~README~ file.
 
      The following can also be read as an outdate [[https://alhassy.github.io/literate/][blog post]].
 
+     Github recognizes ~.org~ files;
+     Agda colouring is determined by typechecking, so Github will not provide certain colours.
+
+     -----
+
      ,#+TOC: headlines 2
      ,#+INCLUDE: literate.lagda
     ")
@@ -946,6 +905,9 @@ Evaluate the following source block with ~C-c C-c~ to produce a ~README~ file.
 
 #+RESULTS:
 : README.org
+
+Org Horizontal rules
+A line consisting of only dashes, and at least 5 of them, will be exported as a horizontal line.
 
 * COMMENT footer
 
