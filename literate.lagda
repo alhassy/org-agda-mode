@@ -74,7 +74,7 @@ Jump to [[#installation]] to quickly get and use the setup.
   - [[#the-generic-mode-definition][The ~generic-mode~ Definition]]
   - [[#user-defined-colouring][User-defined Colouring]]
 - [[#lagda-to-org-and-org-to-lagda][(~lagda-to-org~) and (~org-to-lagda~)]]
-- [[#example][Example]]
+- [[#example-fragments][Example Fragments]]
 - [[#summary][Summary]]
 - [[#installation][Installation]]
 - [[#sources-consulted][Sources Consulted]]
@@ -513,16 +513,16 @@ Handy-dandy shortcuts, which are alternated on mode change:
 Org-mode, by default, lets us create a source block using ~C-c C-v C-d~, so we bring
 this incantation to Agda-mode as well as having ~C-u C-c C-v C-d~ produce a ~spec~-environment.
 
-* Example
+* Example Fragments
 
 # Useful for debugging.
 #
-#+HTML: <!--
+:Hide:
 #+BEGIN_EXAMPLE emacs-lisp
 (unload-feature 'org-agda-mode)
 (load-file "org-agda-mode.el")
 #+END_EXAMPLE
-#+HTML: -->
+:End:
 
 Here's some sample fragments, whose editing can be turned on with ~C-x C-a~.
 #+BEGIN_SRC org-agda
