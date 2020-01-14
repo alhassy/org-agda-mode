@@ -1,3 +1,5 @@
+(provide 'org-agda-mode)
+
 (use-package polymode)
 
 (define-hostmode poly-org-agda-hostmode

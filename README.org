@@ -18,6 +18,10 @@ The current version is a complete departure, motivated by
   ~.lagda.org~ extensions, and
 - the ability to work in multiple Emacs modes at once via the Polymode package.
 
+#+begin_src emacs-lisp
+(provide 'org-agda-mode)
+#+end_src
+
 * Polymode
 
 Polymode allows us to use more than one major mode in a buffer,
