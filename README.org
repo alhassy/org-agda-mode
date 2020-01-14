@@ -1,31 +1,109 @@
 # Created 2019-10-03 Thu 11:13
 #+OPTIONS: toc:nil d:nil
-#+OPTIONS: html-postamble:nil toc:nil d:nil
-#+TITLE: Literate Agda with Org-mode
+#+OPTIONS: html-postamble:nil
+#+TITLE: Better Org-mode support for Literate Agda
 #+DATE: 2018-11-03
-#+AUTHOR: Musa Al-hassy
+#+AUTHOR: Musa Al-hassy & Mark Armstrong
 #+export_file_name: README.org
+#+Property: header-args :tangle org-agda-mode.el
 
-An Emacs mode for working with
-Agda code in an Org-mode like fashion, more or less.
+An Emacs mode providing (nearly complete) Org mode support when
+editing literate Agda code.
 
-The following can also be read as an outdate [[https://alhassy.github.io/literate/][blog post]].
+An older version of this support is documented in a
+[[https://alhassy.github.io/literate/][blog post]].
+
+The current version is a complete departure, motivated by
+- the support in recent Agda versions (> 2.6) for literate files with
+  ~.lagda.org~ extensions, and
+- the ability to work in multiple Emacs modes at once via the Polymode package.
+
+* Polymode
+
+Polymode allows us to use more than one major mode in a buffer,
+something usually impossible in Emacs.
+Note there do exist several other solutions for this, such as MMM;
+Polymode seemed the best candidate for what I want during my
+(admittedly rather brief) search for solutions.
+#+begin_src emacs-lisp
+(use-package polymode)
+#+end_src
+
+[[https://polymode.github.io/][Read the docs]]!
+
+* Org-Agda mode definition
+
+Org is our hostmode.
+#+begin_src emacs-lisp
+(define-hostmode poly-org-agda-hostmode
+  :mode 'org-mode
+  :keep-in-mode 'host)
+#+end_src
+
+Agda is our inner mode, delimited by Org source blocks.
+#+begin_src emacs-lisp
+(define-innermode poly-org-agda-innermode
+  :mode 'agda2-mode
+  :head-matcher "#\\+begin_src agda2\n"
+  :tail-matcher "#\\+end_src\n"
+  :head-mode 'org-mode
+  :tail-mode 'org-mode
+  ;; Disable font-lock-mode, which interferes with Agda annotations,
+  ;; and undo the change to indent-line-function Polymode makes.
+  :init-functions '((lambda (_) (font-lock-mode 0))
+                    (lambda (_) (setq indent-line-function #'indent-relative))))
+#+end_src
+:TODO: rather than ~indent-relative~, we should probably use the user's default.
+
+Now we define the polymode using the above host and inner modes.
+#+begin_src emacs-lisp
+(define-polymode poly-org-agda-mode
+  :hostmode 'poly-org-agda-hostmode
+  :innermodes '(poly-org-agda-innermode))
+#+end_src
+
+Finally, add our new mode to the auto mode list.
+#+begin_src emacs-lisp
+(add-to-list 'auto-mode-alist '("\\.lagda.org" . poly-org-agda-mode))
+#+end_src
+
+* TODO Improvements
+
+- Enable Agda loading, and more generally all the agda keybindings,
+  anywhere in .lagda.org files.
+  - At least the important ones that don't obviously clash with Org bindings.
+  - I've tried loading via ~M-x agda2-load~ from the Org portion,
+    and it works (yay!), but it loses the Agda syntax highlighting?
+- To enable monolith ~.lagda.org~ files
+  (large literate files which tangle several individual clean source files),
+  we need a way to strip one level of indentation after tangling.
+  - Actually it's not /needed/; Agda does allow the contents
+    of the toplevel module (so, the remainder of the file)
+    to be indented; but it breaks /convention/.
+
+** Documentation
+
+- Discover the exact version of Agda that added support for
+  interactive programming in ~.lagda.org~ files.
+
+* COMMENT The original ~org-agda-mode~
 
 Github recognizes ~.org~ files;
-Agda colouring is determined by typechecking, so Github will not provide certain colours.
+Agda colouring is determined by typechecking,
+so Github will not provide certain colours.
 
 -----
 
-#+toc: headlines 2
+# toc: headlines 2
 
-#+description: An Org-mode utility for Agda.
-#+description: An Emacs mode for working with Agda code in an Org-mode like fashion, more or less.
-#+startup: indent
-#+categories: Agda Org Emacs
-#+image: ../assets/img/org_logo.png
-#+source: https://raw.githubusercontent.com/alhassy/org-agda-mode/master/literate.lagda
+# description: An Org-mode utility for Agda.
+# description: An Emacs mode for working with Agda code in an Org-mode like fashion, more or less.
+# startup: indent
+# categories: Agda Org Emacs
+# image: ../assets/img/org_logo.png
+# source: https://raw.githubusercontent.com/alhassy/org-agda-mode/master/literate.lagda
 
-#+property: header-args :tangle no
+# property: header-args :tangle no
 
 #+begin_center
 *Abstract*
@@ -69,7 +147,7 @@ Jump to [[#installation]] to quickly get and use the setup.
 - [[#sources-consulted][Sources Consulted]]
 #+end_quote
 
-* “Agda now supports org files” ---Not Really
+** “Agda now supports org files” ---Not Really
 
 As of Agda 2.6.0 ---which came after this article was originally written---
 there is now support for literate Org-mode support using ~agda2~ org-src blocks.
@@ -92,7 +170,7 @@ to toggle between the modes; e.g., the somewhat large categorical development
 Besides the core capability to switch between the different modes, we also provide
 an elementary yet /extensible/ syntax colouring mechanism for Agda's non-standard highlighting.
 
-* Agda Syntax Highlighting
+** Agda Syntax Highlighting
 
 We produce a new mode, calling it ~ob-agda-mode~,
 so that Org-mode blocks marked with ~ob-agda~ will have Agda /approximated/
@@ -113,7 +191,7 @@ We can use the ~org-src-lang-modes~ variable to map any ---possibly more friendl
 (add-to-list 'org-src-lang-modes '("agda" . ob-agda))
 #+end_src
 
-** Keywords
+*** Keywords
 
 We look at the ~agda2-highlight.el~ source file from the Agda repository
 for colours of keywords and reserved symbols such as ==, λ, ∀=, etc.
@@ -147,7 +225,7 @@ From Agda's [[https://agda.readthedocs.io/en/v2.5.4.1/language/lexical-structure
   "using" "where" "with"))
 #+end_src
 
-** The ~generic-mode~ Definition
+*** The ~generic-mode~ Definition
 
 Agda colouring is approximated as defined below, but a convention is made:
 Function symbols begin with a lower case letter, whereas type symbols begin
@@ -242,7 +320,7 @@ camelCaseIdentifier-01 = let it = 1234 in it
 #+end_src
 
 Next, we turn to supporting Agda interactivity with holes.
-** User-defined Colouring
+*** User-defined Colouring
 
 Since true Agda colouring requires type-checking, it is desirable to allow the user to
 input colouring for their own identifiers. Such <<<user-defined colouring>>> will be
@@ -319,7 +397,7 @@ Then lookup that user provided table, if it is there, and use it.
        (ob-agda/add-colour (car elem) (intern (cadr elem)))))))
 #+end_src
 
-* (~lagda-to-org~) and (~org-to-lagda~)
+** (~lagda-to-org~) and (~org-to-lagda~)
 
 Previously, Agda would not typecheck a non-~lagda~, or non-~agda~, file therefore
 I could not use Org-mode multiple mode settings.
@@ -443,7 +521,7 @@ Handy-dandy shortcuts, which are alternated on mode change:
 Org-mode, by default, lets us create a source block using ~C-c C-v C-d~, so we bring
 this incantation to Agda-mode as well as having ~C-u C-c C-v C-d~ produce a ~spec~-environment.
 
-* Summary
+** Summary
 
 We now have the utility functions:
 
@@ -456,7 +534,7 @@ Hopefully I can make use of this, in the small, if not in the large
 --in which case I'll need to return to the many ~COMMENT~-ed out sections
 in this document.
 
-* Installation
+** Installation
 1. Add the following to the top of your Emacs configuration file, i.e., the =/.emacs= file.
    #+begin_src emacs-lisp
    (progn
@@ -533,7 +611,7 @@ in this document.
 
 4. Now ~C-x C-a~ to switch to Agda mode and load the module.
 
-* Sources Consulted
+** Sources Consulted
 
 - [[http://www.ergoemacs.org/emacs/elisp_syntax_coloring.html][How to Write a Emacs Major Mode for Syntax Coloring]]
 - [[https://stackoverflow.com/questions/3887372/simplest-emacs-syntax-highlighting-tutorial][Simplest Emacs Syntax Highlighting Tutorial]]
