@@ -22,3 +22,5 @@
   :innermodes '(poly-org-agda-innermode))
 
 (add-to-list 'auto-mode-alist '("\\.lagda.org" . poly-org-agda-mode))
+
+(assq-delete-all 'background agda2-highlight-faces)

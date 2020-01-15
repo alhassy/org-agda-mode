@@ -48,8 +48,8 @@ Agda is our inner mode, delimited by Org source blocks.
 #+begin_src emacs-lisp
 (define-innermode poly-org-agda-innermode
   :mode 'agda2-mode
-  :head-matcher "#\\+begin_src agda2\n"
-  :tail-matcher "#\\+end_src\n"
+  :head-matcher "#\\+begin_src agda2"
+  :tail-matcher "#\\+end_src"
   :head-mode 'org-mode
   :tail-mode 'org-mode
   ;; Disable font-lock-mode, which interferes with Agda annotations,
@@ -70,6 +70,29 @@ Finally, add our new mode to the auto mode list.
 #+begin_src emacs-lisp
 (add-to-list 'auto-mode-alist '("\\.lagda.org" . poly-org-agda-mode))
 #+end_src
+
+* Prevent Agda from applying annotations to the literate Org portion
+
+Agda's highlighting mode makes use of ~annotate~ to apply syntax highlighting
+throughout the buffer, including the literate portion,
+which ~agda2-highlight~ identifies as “background”.
+Older versions of Agda would highlight the background using
+~font-lock-comment-face~ (so, making them the same colour as comments).
+Newer versions (since
+[[https://github.com/agda/agda/commit/8bee8727fff1a87c708c28b02edc38931c91f1fb#diff-4b761ced0541ba9fd4efbe58fd37ba7f][this]]
+commit) simply apply Emacs' default face.
+
+Since we're using Org mode for the literate portion,
+we don't want Agda to apply any annotation there.
+We can achieve this by simply removing the setting for background
+from the Agda highlight faces attribute list.
+#+begin_src emacs-lisp
+(assq-delete-all 'background agda2-highlight-faces)
+#+end_src
+
+:TODO: This is not a full fix for the syntax highlighting issues.
+There is a greater conflict between ~annotate~ and ~font-lock~
+that we need to fix.
 
 * TODO Improvements
 
