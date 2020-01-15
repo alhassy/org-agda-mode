@@ -8,8 +8,8 @@
 
 (define-innermode poly-org-agda-innermode
   :mode 'agda2-mode
-  :head-matcher "#\\+begin_src agda2\n"
-  :tail-matcher "#\\+end_src\n"
+  :head-matcher "#\\+begin_src agda2"
+  :tail-matcher "#\\+end_src"
   :head-mode 'org-mode
   :tail-mode 'org-mode
   ;; Disable font-lock-mode, which interferes with Agda annotations,
