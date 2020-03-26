@@ -16,6 +16,11 @@
   "org-agda-mode customisations"
   :group 'languages)
 
+(defcustom use-agda-input t
+  "Whether to use Agda input mode in non agda parts of the file."
+  :group 'org-agda-mode
+  :type 'boolean)
+
 (define-hostmode poly-org-agda-hostmode
   :mode 'org-mode
   :keep-in-mode 'host)
@@ -33,7 +38,8 @@
 
 (define-polymode org-agda-mode
   :hostmode 'poly-org-agda-hostmode
-  :innermodes '(poly-org-agda-innermode))
+  :innermodes '(poly-org-agda-innermode)
+  (when use-agda-input (set-input-method "Agda")))
 
 (assq-delete-all 'background agda2-highlight-faces)
 
