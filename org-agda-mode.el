@@ -1,4 +1,13 @@
-(provide 'org-agda-mode)
+;;; org-agda-mode.el --- Major mode for working with literate org agda files
+;;; -*- lexical-binding: t
+
+;;; Commentary:
+
+;; A Major mode for editing Agda code embedded in org files (.lagda.org files).
+;; See Agda manual for more information:
+;; https://agda.readthedocs.io/en/v2.6.1/tools/literate-programming.html#literate-org
+
+;;; Code:
 
 (require 'polymode)
 
@@ -25,3 +34,6 @@
 (add-to-list 'auto-mode-alist '("\\.lagda.org" . org-agda-mode))
 
 (assq-delete-all 'background agda2-highlight-faces)
+
+(provide 'org-agda-mode)
+;;; org-agda-mode ends here
