@@ -1,6 +1,6 @@
 (provide 'org-agda-mode)
 
-(use-package polymode)
+(require 'polymode)
 
 (define-hostmode poly-org-agda-hostmode
   :mode 'org-mode
