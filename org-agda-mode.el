@@ -12,6 +12,10 @@
 (require 'polymode)
 (require 'agda2-mode)
 
+(defgroup org-agda-mode nil
+  "org-agda-mode customisations"
+  :group 'languages)
+
 (define-hostmode poly-org-agda-hostmode
   :mode 'org-mode
   :keep-in-mode 'host)
