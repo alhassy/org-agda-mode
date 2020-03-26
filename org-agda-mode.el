@@ -21,6 +21,7 @@
   :hostmode 'poly-org-agda-hostmode
   :innermodes '(poly-org-agda-innermode))
 
+;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.lagda.org" . org-agda-mode))
 
 (assq-delete-all 'background agda2-highlight-faces)
