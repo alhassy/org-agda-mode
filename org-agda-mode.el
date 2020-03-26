@@ -17,10 +17,10 @@
   :init-functions '((lambda (_) (font-lock-mode 0))
                     (lambda (_) (setq indent-line-function #'indent-relative))))
 
-(define-polymode poly-org-agda-mode
+(define-polymode org-agda-mode
   :hostmode 'poly-org-agda-hostmode
   :innermodes '(poly-org-agda-innermode))
 
-(add-to-list 'auto-mode-alist '("\\.lagda.org" . poly-org-agda-mode))
+(add-to-list 'auto-mode-alist '("\\.lagda.org" . org-agda-mode))
 
 (assq-delete-all 'background agda2-highlight-faces)
