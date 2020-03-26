@@ -1,10 +1,10 @@
-;;; org-agda-mode.el --- Major mode for working with literate org agda files
+;;; org-agda-mode.el --- Major mode for working with literate Org Agda files
 ;;; -*- lexical-binding: t
 
 ;;; Commentary:
 
-;; A Major mode for editing Agda code embedded in org files (.lagda.org files).
-;; See Agda manual for more information:
+;; A Major mode for editing Agda code embedded in Org files (.lagda.org files.)
+;; See the Agda manual for more information:
 ;; https://agda.readthedocs.io/en/v2.6.1/tools/literate-programming.html#literate-org
 
 ;;; Code:
@@ -17,7 +17,7 @@
   :group 'languages)
 
 (defcustom use-agda-input t
-  "Whether to use Agda input mode in non agda parts of the file."
+  "Whether to use Agda input mode in non-Agda parts of the file."
   :group 'org-agda-mode
   :type 'boolean)
 
@@ -29,6 +29,7 @@
   :mode 'agda2-mode
   :head-matcher "#\\+begin_src agda2"
   :tail-matcher "#\\+end_src"
+  ;; Keep the code block wrappers in Org mode, so they can be folded, etc.
   :head-mode 'org-mode
   :tail-mode 'org-mode
   ;; Disable font-lock-mode, which interferes with Agda annotations,

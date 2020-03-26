@@ -4,36 +4,79 @@
 #+TITLE: Better Org-mode support for Literate Agda
 #+DATE: 2018-11-03
 #+AUTHOR: Musa Al-hassy & Mark Armstrong
+#+DESCRIPTION: Major mode for working with literate Org Agda files
 #+export_file_name: README.org
 #+Property: header-args :tangle org-agda-mode.el
 
-An Emacs mode providing (nearly complete) Org mode support when
-editing literate Agda code.
+* Introduction
+
+# This paragraph is copied below in [[Package header]]
+# Note the DESCRIPTION is also echoed there.
+An Emacs major mode for editing Agda code embedded in Org files
+(~.lagda.org~ files.)
+See the
+[[https://agda.readthedocs.io/en/v2.6.1/tools/literate-programming.html#literate-org][Agda manual]]
+for more information.
 
 An older version of this support is documented in a
 [[https://alhassy.github.io/literate/][blog post]].
-
 The current version is a complete departure, motivated by
 - the support in recent Agda versions (> 2.6) for literate files with
   ~.lagda.org~ extensions, and
 - the ability to work in multiple Emacs modes at once via the Polymode package.
 
+* Package header                                :noexport:
+
 #+begin_src emacs-lisp
-(provide 'org-agda-mode)
+;;; org-agda-mode.el --- Major mode for working with literate Org Agda files
+;;; -*- lexical-binding: t
+
+;;; Commentary:
+
+;; A Major mode for editing Agda code embedded in Org files (.lagda.org files.)
+;; See the Agda manual for more information:
+;; https://agda.readthedocs.io/en/v2.6.1/tools/literate-programming.html#literate-org
+
+;;; Code:
 #+end_src
 
-* Polymode
+* Background
+
+** Polymode
 
 Polymode allows us to use more than one major mode in a buffer,
 something usually impossible in Emacs.
 Note there do exist several other solutions for this, such as MMM;
 Polymode seemed the best candidate for what I want during my
 (admittedly rather brief) search for solutions.
-#+begin_src emacs-lisp
-(use-package polymode)
-#+end_src
 
 [[https://polymode.github.io/][Read the docs]]!
+
+* Prerequisite packages
+
+#+begin_src emacs-lisp
+(require 'polymode)
+(require 'agda2-mode)
+#+end_src
+
+* Customisations
+
+#+begin_src emacs-lisp
+(defgroup org-agda-mode nil
+  "org-agda-mode customisations"
+  :group 'languages)
+#+end_src
+
+Naturally, users will often want to use Agda input mode
+to enter unicode characters in their literate documentation.
+Do note that it's also possible to enable this input mode
+globally in your Emacs init.
+#+begin_src emacs-lisp
+(defcustom use-agda-input t
+  "Whether to use Agda input mode in non-Agda parts of the file."
+  :group 'org-agda-mode
+  :type 'boolean)
+#+end_src
 
 * Org-Agda mode definition
 
@@ -50,6 +93,7 @@ Agda is our inner mode, delimited by Org source blocks.
   :mode 'agda2-mode
   :head-matcher "#\\+begin_src agda2"
   :tail-matcher "#\\+end_src"
+  ;; Keep the code block wrappers in Org mode, so they can be folded, etc.
   :head-mode 'org-mode
   :tail-mode 'org-mode
   ;; Disable font-lock-mode, which interferes with Agda annotations,
@@ -61,14 +105,10 @@ Agda is our inner mode, delimited by Org source blocks.
 
 Now we define the polymode using the above host and inner modes.
 #+begin_src emacs-lisp
-(define-polymode poly-org-agda-mode
+(define-polymode org-agda-mode
   :hostmode 'poly-org-agda-hostmode
-  :innermodes '(poly-org-agda-innermode))
-#+end_src
-
-Finally, add our new mode to the auto mode list.
-#+begin_src emacs-lisp
-(add-to-list 'auto-mode-alist '("\\.lagda.org" . poly-org-agda-mode))
+  :innermodes '(poly-org-agda-innermode)
+  (when use-agda-input (set-input-method "Agda")))
 #+end_src
 
 * Prevent Agda from applying annotations to the literate Org portion
@@ -93,6 +133,21 @@ from the Agda highlight faces attribute list.
 :TODO: This is not a full fix for the syntax highlighting issues.
 There is a greater conflict between ~annotate~ and ~font-lock~
 that we need to fix.
+
+* Automatically use ~org-agda-mode~ for ~.lagda.org~ files
+
+Finally, add our new mode to the auto mode list.
+#+begin_src emacs-lisp
+;;;###autoload
+(add-to-list 'auto-mode-alist '("\\.lagda.org" . org-agda-mode))
+#+end_src
+
+* Package footer
+
+#+begin_src emacs-lisp
+(provide 'org-agda-mode)
+;;; org-agda-mode ends here
+#+end_src
 
 * TODO Improvements
 
