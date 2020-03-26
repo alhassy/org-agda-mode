@@ -10,6 +10,7 @@
 ;;; Code:
 
 (require 'polymode)
+(require 'agda2-mode)
 
 (define-hostmode poly-org-agda-hostmode
   :mode 'org-mode
