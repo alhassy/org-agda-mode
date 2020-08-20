@@ -40,6 +40,15 @@ The current version is a complete departure, motivated by
 ;;; Code:
 #+end_src
 
+* Installation
+
+Simply place ~org-agda-mode.el~ in your Emacs load path,
+and add
+#+begin_src emacs-lisp
+(require 'org-agda-mode)
+#+end_src
+to your Emacs initialisation file.
+
 * Background
 
 ** Polymode
