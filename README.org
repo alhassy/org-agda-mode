@@ -49,6 +49,18 @@ and add
 #+end_src
 to your Emacs initialisation file.
 
+Alternatively, if you use straight.el and use-package, then this package can be installed by adding the following to your emacs configuration.
+#+BEGIN_SRC emacs-lisp
+(use-package polymode)
+(use-package org-agda-mode
+  :straight (:host github
+		   :repo "alhassy/org-agda-mode"
+		   :branch "master"
+		   :files ("org-agda-mode.el")
+		   )
+  )
+#+END_SRC
+
 * Background
 
 ** Polymode
